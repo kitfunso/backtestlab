@@ -286,15 +286,32 @@ export function StrategyBuilder({ stock, priceData, isLight, onClose }: Strategy
   const addRule = useCallback((indicatorIndex: number) => {
     const type = indicators[indicatorIndex]?.type;
     const defaultRule = getDefaultRule(type, indicatorIndex);
-    setRules((prev) => [
-      ...prev,
-      defaultRule ?? {
-        indicator_index: indicatorIndex,
-        condition: 'is_above' as SignalCondition,
-        threshold: 0,
-        direction: 'both' as const,
-      },
-    ]);
+    if (defaultRule) {
+      setRules((prev) => [...prev, defaultRule]);
+    } else {
+      // Trend types: find/create a close_price indicator and compare against it
+      const trendTypes: IndicatorType[] = ['sma', 'ema', 'dema', 'tema', 'wma', 'hull_ma', 'vwma', 'linear_regression', 'parabolic_sar'];
+      if (trendTypes.includes(type)) {
+        let closeIdx = indicators.findIndex((ind) => ind.type === 'close_price');
+        if (closeIdx === -1) {
+          closeIdx = indicators.length;
+          setIndicators((prev) => [...prev, { type: 'close_price' as IndicatorType, params: {} }]);
+        }
+        setRules((prev) => [...prev, {
+          indicator_index: closeIdx,
+          condition: 'is_above' as SignalCondition,
+          reference_indicator: indicatorIndex,
+          direction: 'both' as const,
+        }]);
+      } else {
+        setRules((prev) => [...prev, {
+          indicator_index: indicatorIndex,
+          condition: 'is_above' as SignalCondition,
+          threshold: 0,
+          direction: 'both' as const,
+        }]);
+      }
+    }
     setActivePreset(null);
   }, [indicators]);
 
@@ -829,7 +846,7 @@ function DropdownItem({
         {meta.label}
       </button>
       <div className={cn(
-        'absolute z-[110] left-full top-0 ml-2 w-52 px-2.5 py-1.5 rounded-lg text-[10px] leading-snug shadow-lg',
+        'absolute z-[110] right-full top-0 mr-2 w-52 px-2.5 py-1.5 rounded-lg text-[10px] leading-snug shadow-lg',
         'opacity-0 pointer-events-none group-hover/dd:opacity-100 transition-opacity duration-150',
         isLight ? 'bg-gray-900 text-gray-100' : 'bg-zinc-100 text-zinc-900',
       )}>
