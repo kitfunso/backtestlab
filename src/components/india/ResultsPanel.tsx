@@ -187,7 +187,7 @@ function PerformanceTab({ result, isLight }: { result: BacktestResult; isLight: 
             Drawdown
           </span>
           <span className="font-mono text-xs text-[#EF4444]">
-            {formatPct(result.metrics.max_dd_pct)}
+            {formatINR(result.metrics.max_dd_inr)}
           </span>
         </div>
         <ResponsiveContainer width="100%" height={120}>
@@ -208,8 +208,8 @@ function PerformanceTab({ result, isLight }: { result: BacktestResult; isLight: 
             <YAxis
               domain={['dataMin', 0]}
               tick={{ fontSize: 10, fill: isLight ? '#9ca3af' : '#71717a' }}
-              tickFormatter={(v: number) => `${v.toFixed(0)}%`}
-              width={45}
+              tickFormatter={(v: number) => formatINR(v)}
+              width={70}
             />
             <Tooltip
               contentStyle={{
@@ -218,7 +218,7 @@ function PerformanceTab({ result, isLight }: { result: BacktestResult; isLight: 
                 borderRadius: 8,
                 fontSize: 11,
               }}
-              formatter={(value: number) => [`${value.toFixed(2)}%`, 'Drawdown']}
+              formatter={(value: number) => [formatINRFull(value), 'Drawdown']}
             />
             <ReferenceLine y={0} stroke={isLight ? '#d1d5db' : '#3f3f46'} strokeDasharray="3 3" />
             <Area
@@ -240,7 +240,7 @@ function PerformanceTab({ result, isLight }: { result: BacktestResult; isLight: 
           { label: 'Sortino', value: result.metrics.sortino.toFixed(2), color: '#FF9933' },
           { label: 'Win Rate', value: `${result.metrics.win_rate_pct.toFixed(0)}%`, color: result.metrics.win_rate_pct >= 50 ? '#22C55E' : '#EF4444' },
           { label: 'Profit Factor', value: result.metrics.profit_factor === Infinity ? '∞' : result.metrics.profit_factor.toFixed(2), color: result.metrics.profit_factor >= 1 ? '#22C55E' : '#EF4444' },
-          { label: 'Max DD', value: formatPct(result.metrics.max_dd_pct), color: '#EF4444' },
+          { label: 'Max DD', value: formatINR(result.metrics.max_dd_inr), color: '#EF4444' },
           { label: 'Trades', value: String(result.metrics.num_trades), color: isLight ? '#374151' : '#d4d4d8' },
           { label: 'Avg Hold', value: `${result.metrics.avg_hold_days.toFixed(0)}d`, color: isLight ? '#374151' : '#d4d4d8' },
         ].map((m) => (

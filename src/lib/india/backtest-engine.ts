@@ -860,12 +860,10 @@ function buildDrawdown(cumulative: number[]): number[] {
   const n = cumulative.length;
   const dd: number[] = new Array(n);
   let peak = -Infinity;
-  const initialEquity = 1_000_000;
   for (let i = 0; i < n; i++) {
     if (cumulative[i] > peak) peak = cumulative[i];
-    const equity = initialEquity + peak;
-    // Negative percentage: -43.5 means 43.5% drawdown from peak
-    dd[i] = equity <= 0 ? 0 : ((cumulative[i] - peak) / equity) * 100;
+    // Drawdown in INR (not percentage — no meaningful capital base for F&O)
+    dd[i] = cumulative[i] - peak; // Always <= 0
   }
   return dd;
 }
