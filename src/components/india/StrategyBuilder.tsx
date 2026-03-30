@@ -1,137 +1,50 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  type DropResult,
+  type DraggableProvidedDragHandleProps,
+} from '@hello-pangea/dnd';
 import { cn } from '@/lib/utils';
 import type {
   CombineLogic,
-  IndicatorConfig,
   IndicatorType,
   IndiaStock,
-  PresetStrategy,
   PriceData,
   RebalanceFreq,
-  SignalCondition,
-  SignalRule,
   SizingConfig,
   StrategyConfig,
+  SignalCondition,
 } from '@/lib/india/types';
 import { useBacktest } from '@/lib/india/hooks';
 import { PRESETS } from '@/lib/india/presets';
+import {
+  INDICATOR_META,
+  INDICATOR_CATEGORIES,
+  CATEGORY_COLORS,
+  formatBlockLabel,
+  PRESET_TOOLTIPS,
+} from '@/lib/india/indicator-meta';
+import type {
+  PipelineBlock,
+  IndicatorBlock,
+  TriggerBlock,
+  ActionBlock,
+} from '@/lib/india/block-types';
+import {
+  blocksToStrategyConfig,
+  presetToBlocks,
+  getDefaultBlocks,
+  isValidOrder,
+  removeBlockCascade,
+} from '@/lib/india/block-utils';
 import { ResultsPanel } from './ResultsPanel';
 
 // ---------------------------------------------------------------------------
-// Indicator Metadata
-// ---------------------------------------------------------------------------
-
-interface IndicatorMeta {
-  label: string;
-  desc: string;
-  category: 'Trend' | 'Momentum' | 'Volatility' | 'Volume' | 'Price';
-  params: { key: string; label: string; min: number; max: number; step: number; default: number }[];
-}
-
-const INDICATOR_META: Record<IndicatorType, IndicatorMeta> = {
-  sma: { label: 'SMA', desc: 'Simple Moving Average: average of last N closing prices. Smooths noise to reveal trend direction.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
-  ema: { label: 'EMA', desc: 'Exponential Moving Average: weighted average giving more importance to recent prices. Reacts faster than SMA.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
-  dema: { label: 'DEMA', desc: 'Double EMA: applies EMA twice to reduce lag further. Formula: 2*EMA(N) - EMA(EMA(N)).', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
-  tema: { label: 'TEMA', desc: 'Triple EMA: three-layer EMA for minimal lag. Formula: 3*EMA - 3*EMA(EMA) + EMA(EMA(EMA)).', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
-  wma: { label: 'WMA', desc: 'Weighted Moving Average: linearly weighted, most recent price gets highest weight.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
-  hull_ma: { label: 'Hull MA', desc: 'Hull Moving Average: uses WMA of difference between short and long WMA. Very low lag, smooth output.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 4, max: 200, step: 1, default: 20 }] },
-  vwma: { label: 'VWMA', desc: 'Volume-Weighted Moving Average: like SMA but weights each price by its volume. High-volume days matter more.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
-  supertrend: { label: 'SuperTrend', desc: 'Trend-following indicator using ATR bands. Outputs +1 (bullish) or -1 (bearish) based on price vs dynamic support/resistance.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 10 }, { key: 'multiplier', label: 'Multiplier', min: 1, max: 5, step: 0.1, default: 3 }] },
-  ichimoku: { label: 'Ichimoku', desc: 'Ichimoku Cloud: Japanese system with 5 lines showing support, resistance, trend, and momentum at a glance.', category: 'Trend', params: [{ key: 'conversion', label: 'Conversion', min: 5, max: 30, step: 1, default: 9 }, { key: 'base', label: 'Base', min: 10, max: 60, step: 1, default: 26 }, { key: 'span_b', label: 'Span B', min: 20, max: 120, step: 1, default: 52 }] },
-  parabolic_sar: { label: 'Parabolic SAR', desc: 'Parabolic Stop and Reverse: places dots above/below price to signal trend direction and trailing stop levels.', category: 'Trend', params: [{ key: 'af_start', label: 'AF Start', min: 0.01, max: 0.1, step: 0.005, default: 0.02 }, { key: 'af_max', label: 'AF Max', min: 0.1, max: 0.5, step: 0.01, default: 0.2 }] },
-  linear_regression: { label: 'Linear Reg', desc: 'Linear Regression: fits a straight line through the last N prices. Shows the statistically expected price level.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
-  donchian: { label: 'Donchian', desc: 'Donchian Channel: highest high and lowest low over N periods. Breakout above upper = bullish, below lower = bearish.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
-  rsi: { label: 'RSI', desc: 'Relative Strength Index (0-100): measures speed of price changes. Above 70 = overbought, below 30 = oversold.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 2, max: 50, step: 1, default: 14 }] },
-  stoch_rsi: { label: 'Stoch RSI', desc: 'Stochastic RSI (0-1): applies Stochastic formula to RSI values. More sensitive than plain RSI for overbought/oversold.', category: 'Momentum', params: [{ key: 'rsi_period', label: 'RSI Period', min: 2, max: 50, step: 1, default: 14 }, { key: 'stoch_period', label: 'Stoch Period', min: 2, max: 50, step: 1, default: 14 }, { key: 'k_smooth', label: 'K Smooth', min: 1, max: 10, step: 1, default: 3 }] },
-  macd: { label: 'MACD', desc: 'Moving Average Convergence Divergence: difference between fast and slow EMA. Positive = bullish momentum, negative = bearish.', category: 'Momentum', params: [{ key: 'fast', label: 'Fast', min: 5, max: 50, step: 1, default: 12 }, { key: 'slow', label: 'Slow', min: 10, max: 100, step: 1, default: 26 }, { key: 'signal', label: 'Signal', min: 2, max: 20, step: 1, default: 9 }] },
-  adx: { label: 'ADX', desc: 'Average Directional Index (0-100): measures trend strength regardless of direction. Above 25 = strong trend, below 20 = weak/ranging.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 14 }] },
-  cci: { label: 'CCI', desc: 'Commodity Channel Index: measures deviation from statistical mean. Above +100 = overbought, below -100 = oversold.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 20 }] },
-  roc: { label: 'ROC', desc: 'Rate of Change (%): percentage change over N periods. Positive = upward momentum, negative = downward.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 1, max: 50, step: 1, default: 12 }] },
-  williams_r: { label: 'Williams %R', desc: 'Williams %R (-100 to 0): shows where close is relative to high-low range. Above -20 = overbought, below -80 = oversold.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 14 }] },
-  momentum: { label: 'Momentum', desc: 'Price Momentum: difference between current price and price N bars ago. Positive = rising, negative = falling.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 1, max: 50, step: 1, default: 10 }] },
-  tsi: { label: 'TSI', desc: 'True Strength Index (-100 to +100): double-smoothed momentum oscillator. Crosses above 0 = bullish, below = bearish.', category: 'Momentum', params: [{ key: 'long_period', label: 'Long', min: 10, max: 50, step: 1, default: 25 }, { key: 'short_period', label: 'Short', min: 5, max: 25, step: 1, default: 13 }] },
-  awesome_osc: { label: 'Awesome Osc', desc: 'Awesome Oscillator: difference between 5-period and 34-period SMA of midpoint prices. Positive = bullish, negative = bearish.', category: 'Momentum', params: [{ key: 'fast', label: 'Fast', min: 2, max: 20, step: 1, default: 5 }, { key: 'slow', label: 'Slow', min: 10, max: 50, step: 1, default: 34 }] },
-  ppo: { label: 'PPO', desc: 'Percentage Price Oscillator: MACD expressed as a percentage. Allows comparison across different price levels.', category: 'Momentum', params: [{ key: 'fast', label: 'Fast', min: 5, max: 50, step: 1, default: 12 }, { key: 'slow', label: 'Slow', min: 10, max: 100, step: 1, default: 26 }] },
-  ts_momentum: { label: 'TS Momentum', desc: 'Time-Series Momentum: cumulative return over lookback period. Positive = trending up, negative = trending down.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 5, max: 250, step: 1, default: 126 }] },
-  bollinger: { label: 'Bollinger Bands', desc: 'Bollinger Bands: SMA with upper/lower bands at N standard deviations. Price near upper band = potentially overbought.', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }, { key: 'std_dev', label: 'Std Dev', min: 0.5, max: 4, step: 0.1, default: 2 }] },
-  atr: { label: 'ATR', desc: 'Average True Range: measures volatility as the average of true ranges (high-low including gaps). Higher = more volatile.', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 14 }] },
-  keltner: { label: 'Keltner Channel', desc: 'Keltner Channel: EMA with bands based on ATR. Similar to Bollinger but uses ATR instead of standard deviation.', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 20 }, { key: 'multiplier', label: 'Multiplier', min: 0.5, max: 4, step: 0.1, default: 1.5 }] },
-  hist_vol: { label: 'Historical Vol', desc: 'Historical Volatility: annualized standard deviation of daily returns over N periods. Measures realized price variability.', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
-  bb_pct_b: { label: 'BB %B', desc: 'Bollinger %B (0 to 1): shows where price sits within the bands. 0 = at lower band, 1 = at upper band, 0.5 = at middle.', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }, { key: 'std_dev', label: 'Std Dev', min: 0.5, max: 4, step: 0.1, default: 2 }] },
-  bb_width: { label: 'BB Width', desc: 'Bollinger Band Width: distance between upper and lower bands as % of middle. Low width = squeeze (breakout expected).', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }, { key: 'std_dev', label: 'Std Dev', min: 0.5, max: 4, step: 0.1, default: 2 }] },
-  std_dev: { label: 'Std Dev', desc: 'Standard Deviation: measures price dispersion over N periods. Rising std dev = increasing volatility.', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
-  chaikin_vol: { label: 'Chaikin Vol', desc: 'Chaikin Volatility: rate of change of the EMA of (High - Low) range. Measures whether volatility is expanding or contracting.', category: 'Volatility', params: [{ key: 'ema_period', label: 'EMA Period', min: 5, max: 50, step: 1, default: 10 }, { key: 'roc_period', label: 'ROC Period', min: 5, max: 50, step: 1, default: 10 }] },
-  obv: { label: 'OBV', desc: 'On-Balance Volume: cumulative sum of volume (added on up days, subtracted on down days). Divergence from price signals potential reversal.', category: 'Volume', params: [] },
-  vol_sma: { label: 'Volume SMA', desc: 'Volume Simple Moving Average: average trading volume over N periods. Compare current volume to this for unusual activity.', category: 'Volume', params: [{ key: 'period', label: 'Period', min: 2, max: 100, step: 1, default: 20 }] },
-  accum_dist: { label: 'Accum/Dist', desc: 'Accumulation/Distribution Line: volume-weighted measure of whether shares are being accumulated (bought) or distributed (sold).', category: 'Volume', params: [] },
-  cmf: { label: 'CMF', desc: 'Chaikin Money Flow (-1 to +1): measures buying/selling pressure over N periods. Positive = buying pressure, negative = selling.', category: 'Volume', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 20 }] },
-  mfi: { label: 'MFI', desc: 'Money Flow Index (0-100): volume-weighted RSI. Above 80 = overbought with high volume, below 20 = oversold.', category: 'Volume', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 14 }] },
-  vwap: { label: 'VWAP', desc: 'Volume-Weighted Average Price: average price weighted by volume from the start of data. Institutional benchmark for fair value.', category: 'Volume', params: [] },
-  pivot_points: { label: 'Pivot Points', desc: 'Pivot Points: support/resistance levels calculated from previous high, low, close. Used to identify intraday turning points.', category: 'Price', params: [] },
-  price_vs_high_low: { label: 'Price vs H/L', desc: 'Price vs High/Low (0 to 1): where current price sits in the N-period range. 1 = at the high, 0 = at the low.', category: 'Price', params: [{ key: 'period', label: 'Period', min: 5, max: 250, step: 1, default: 52 }] },
-  z_score: { label: 'Z-Score', desc: 'Z-Score of Price: how many standard deviations price is from its N-period mean. Above +2 = statistically high, below -2 = low.', category: 'Price', params: [{ key: 'period', label: 'Period', min: 10, max: 200, step: 1, default: 50 }] },
-  heikin_ashi: { label: 'Heikin Ashi', desc: 'Heikin Ashi Trend: smoothed candlestick technique. Outputs trend direction based on modified open/close calculations.', category: 'Price', params: [] },
-  pct_from_high: { label: '% from High', desc: 'Percent from High: how far price is below its N-period high. 0% = at the high, -20% = 20% below the high.', category: 'Price', params: [{ key: 'period', label: 'Period', min: 5, max: 250, step: 1, default: 52 }] },
-  support_resistance: { label: 'S/R Levels', desc: 'Support/Resistance: identifies key price levels from N-period highs and lows where price tends to reverse.', category: 'Price', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
-  close_price: { label: 'Close Price', desc: 'Raw closing price. Used internally for comparing price against moving averages.', category: 'Price', params: [] },
-};
-
-const INDICATOR_CATEGORIES = ['Trend', 'Momentum', 'Volatility', 'Volume', 'Price'] as const;
-
-/**
- * Create a sensible default signal rule when a user adds an indicator.
- * For trend indicators (SMA, EMA, etc.): "price is above indicator → long/short"
- * For oscillators (RSI, Stochastic, etc.): "crosses above oversold → long"
- * For momentum: "is above 0 → long/short"
- */
-function getDefaultRule(type: IndicatorType, indicatorIndex: number): SignalRule | null {
-  // Trend indicators: for a single MA, we can't compare price to MA directly
-  // because the system compares indicator outputs, not raw prices.
-  // Solution: return null here. The addIndicator callback will handle trend MAs
-  // by adding a 'price' pseudo-indicator and setting up the cross rule.
-  const trendTypes: IndicatorType[] = ['sma', 'ema', 'dema', 'tema', 'wma', 'hull_ma', 'vwma', 'linear_regression', 'parabolic_sar'];
-  if (trendTypes.includes(type)) {
-    // Will be handled specially in addIndicator
-    return null;
-  }
-
-  // Oscillators: crosses above/below thresholds
-  if (type === 'rsi') return { indicator_index: indicatorIndex, condition: 'is_above', threshold: 50, direction: 'both' };
-  if (type === 'stoch_rsi') return { indicator_index: indicatorIndex, condition: 'is_above', threshold: 50, direction: 'both' };
-  if (type === 'cci') return { indicator_index: indicatorIndex, condition: 'is_above', threshold: 0, direction: 'both' };
-  if (type === 'williams_r') return { indicator_index: indicatorIndex, condition: 'is_above', threshold: -50, direction: 'both' };
-  if (type === 'mfi') return { indicator_index: indicatorIndex, condition: 'is_above', threshold: 50, direction: 'both' };
-
-  // Momentum/directional: above 0 = long, below 0 = short
-  const momentumTypes: IndicatorType[] = ['macd', 'momentum', 'roc', 'tsi', 'awesome_osc', 'ppo', 'ts_momentum'];
-  if (momentumTypes.includes(type)) {
-    return { indicator_index: indicatorIndex, condition: 'is_above', threshold: 0, direction: 'both' };
-  }
-
-  // Supertrend direction: above 0 = long
-  if (type === 'supertrend') return { indicator_index: indicatorIndex, condition: 'is_above', threshold: 0, direction: 'both' };
-
-  // Bollinger %B: above 0.5 = long
-  if (type === 'bb_pct_b') return { indicator_index: indicatorIndex, condition: 'is_above', threshold: 0.5, direction: 'both' };
-
-  // Default: is_above 0 → both
-  return { indicator_index: indicatorIndex, condition: 'is_above', threshold: 0, direction: 'both' };
-}
-
-const PRESET_TOOLTIPS: Record<string, string> = {
-  golden_cross: 'Go long when the 50-day SMA is above the 200-day SMA (bullish trend), short when below. Classic trend-following strategy.',
-  rsi_mean_reversion: 'Go long when RSI(14) crosses above 30 (oversold bounce), go short when RSI crosses below 70 (overbought reversal). Mean reversion strategy.',
-  bollinger_bounce: 'Go long when price touches the lower Bollinger Band (oversold), go short when it touches the upper band (overbought). Uses 20-day, 2σ bands.',
-  macd_crossover: 'Go long when MACD histogram is positive (bullish momentum), short when negative. Uses standard 12/26/9 settings.',
-  supertrend: 'Trend-following indicator using ATR. Go long when price is above the Supertrend line, short when below. Period 10, multiplier 3.',
-  triple_ma: 'Go long when EMA(9) > EMA(21) > EMA(55) — all three moving averages aligned bullish. Requires ALL conditions to agree (strong trend filter).',
-  momentum_6m: 'Go long when the 6-month (126-day) return is positive, short when negative. Pure time-series momentum strategy. Rebalances monthly.',
-};
-
-// ---------------------------------------------------------------------------
-// Component
+// Props
 // ---------------------------------------------------------------------------
 
 interface StrategyBuilderProps {
@@ -141,9 +54,103 @@ interface StrategyBuilderProps {
   onClose: () => void;
 }
 
-export function StrategyBuilder({ stock, priceData, isLight, onClose }: StrategyBuilderProps) {
-  const [indicators, setIndicators] = useState<IndicatorConfig[]>([]);
-  const [rules, setRules] = useState<SignalRule[]>([]);
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const CONDITION_LABELS: Record<SignalCondition, string> = {
+  crosses_above: 'crosses above',
+  crosses_below: 'crosses below',
+  is_above: 'is above',
+  is_below: 'is below',
+  between: 'between',
+};
+
+function findIndicatorBlock(
+  blocks: readonly PipelineBlock[],
+  id: string,
+): IndicatorBlock | undefined {
+  return blocks.find(
+    (b): b is IndicatorBlock => b.kind === 'indicator' && b.id === id,
+  );
+}
+
+function getTriggerLabel(
+  trigger: TriggerBlock,
+  blocks: readonly PipelineBlock[],
+): string {
+  const cond = CONDITION_LABELS[trigger.condition] ?? trigger.condition;
+  if (trigger.referenceBlockId) {
+    const ref = findIndicatorBlock(blocks, trigger.referenceBlockId);
+    if (ref) return `${cond} ${formatBlockLabel(ref.indicatorType, ref.params)}`;
+    return cond;
+  }
+  if (trigger.threshold !== undefined) return `${cond} ${trigger.threshold}`;
+  return cond;
+}
+
+function getActionLabel(action: ActionBlock): string {
+  if (action.direction === 'long') return 'Go Long';
+  if (action.direction === 'short') return 'Go Short';
+  return 'Go Long/Short';
+}
+
+function getBlockBorderColor(
+  block: PipelineBlock,
+  _blocks: readonly PipelineBlock[],
+): string {
+  if (block.kind === 'indicator') {
+    const meta = INDICATOR_META[(block as IndicatorBlock).indicatorType];
+    return CATEGORY_COLORS[meta?.category] ?? '#6B7280';
+  }
+  if (block.kind === 'trigger') return '#FF9933';
+  const action = block as ActionBlock;
+  if (action.direction === 'long') return '#22C55E';
+  if (action.direction === 'short') return '#EF4444';
+  return 'linear-gradient(to bottom, #22C55E 50%, #EF4444 50%)';
+}
+
+function getBlockLabel(
+  block: PipelineBlock,
+  blocks: readonly PipelineBlock[],
+): string {
+  if (block.kind === 'indicator') {
+    const ind = block as IndicatorBlock;
+    return formatBlockLabel(ind.indicatorType, ind.params);
+  }
+  if (block.kind === 'trigger') return getTriggerLabel(block as TriggerBlock, blocks);
+  return getActionLabel(block as ActionBlock);
+}
+
+function getBlockTooltip(
+  block: PipelineBlock,
+  blocks: readonly PipelineBlock[],
+): string {
+  if (block.kind === 'indicator') {
+    const meta = INDICATOR_META[(block as IndicatorBlock).indicatorType];
+    return meta?.desc ?? '';
+  }
+  if (block.kind === 'trigger') {
+    const t = block as TriggerBlock;
+    const src = findIndicatorBlock(blocks, t.sourceBlockId);
+    const srcLabel = src ? formatBlockLabel(src.indicatorType, src.params) : '?';
+    return `When ${srcLabel} ${getTriggerLabel(t, blocks)}`;
+  }
+  const a = block as ActionBlock;
+  return `Direction: ${a.direction}`;
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export function StrategyBuilder({
+  stock,
+  priceData,
+  isLight,
+  onClose,
+}: StrategyBuilderProps) {
+  const [blocks, setBlocks] = useState<PipelineBlock[]>([]);
   const [combineLogic, setCombineLogic] = useState<CombineLogic>('or');
   const [sizing, setSizing] = useState<SizingConfig>({
     risk_budget: 500000,
@@ -152,12 +159,14 @@ export function StrategyBuilder({ stock, priceData, isLight, onClose }: Strategy
   });
   const [rebalance, setRebalance] = useState<RebalanceFreq>('daily');
   const [activePreset, setActivePreset] = useState<string | null>(null);
-  const [showAddDropdown, setShowAddDropdown] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [expandedBlockId, setExpandedBlockId] = useState<string | null>(null);
 
-  const config: StrategyConfig | null = useMemo(() => {
-    if (indicators.length === 0) return null;
-    return { indicators, rules, combine_logic: combineLogic, sizing, rebalance };
-  }, [indicators, rules, combineLogic, sizing, rebalance]);
+  // Derive config from blocks
+  const config: StrategyConfig | null = useMemo(
+    () => blocksToStrategyConfig(blocks, sizing, rebalance, combineLogic),
+    [blocks, sizing, rebalance, combineLogic],
+  );
 
   const { result, isLoading, error } = useBacktest({
     ticker: stock?.ticker ?? '',
@@ -166,169 +175,116 @@ export function StrategyBuilder({ stock, priceData, isLight, onClose }: Strategy
     priceData,
   });
 
-  const applyPreset = useCallback((preset: PresetStrategy) => {
-    setIndicators([...preset.config.indicators] as IndicatorConfig[]);
-    setRules([...preset.config.rules] as SignalRule[]);
-    setCombineLogic(preset.config.combine_logic);
-    setSizing(preset.config.sizing);
-    setRebalance(preset.config.rebalance);
-    setActivePreset(preset.id);
-  }, []);
+  // Preset application
+  const applyPreset = useCallback(
+    (preset: (typeof PRESETS)[number]) => {
+      const newBlocks = presetToBlocks(preset);
+      setBlocks(newBlocks);
+      setCombineLogic(preset.config.combine_logic);
+      setSizing(preset.config.sizing);
+      setRebalance(preset.config.rebalance);
+      setActivePreset(preset.id);
+      setExpandedBlockId(null);
+    },
+    [],
+  );
 
-  // Auto-apply the first preset when a stock is selected and no strategy is configured
+  // Auto-apply first preset on stock selection
   const prevTickerRef = useRef<string | null>(null);
   useEffect(() => {
     const ticker = stock?.ticker ?? null;
-    if (ticker && ticker !== prevTickerRef.current && indicators.length === 0 && PRESETS.length > 0) {
+    if (
+      ticker &&
+      ticker !== prevTickerRef.current &&
+      blocks.length === 0 &&
+      PRESETS.length > 0
+    ) {
       applyPreset(PRESETS[0]);
     }
     prevTickerRef.current = ticker;
-  }, [stock?.ticker, indicators.length, applyPreset]);
+  }, [stock?.ticker, blocks.length, applyPreset]);
 
+  // Block mutations
   const addIndicator = useCallback((type: IndicatorType) => {
-    const meta = INDICATOR_META[type];
-    const params: Record<string, number> = {};
-    for (const p of meta.params) {
-      params[p.key] = p.default;
-    }
-    const trendTypes: IndicatorType[] = ['sma', 'ema', 'dema', 'tema', 'wma', 'hull_ma', 'vwma', 'linear_regression', 'parabolic_sar'];
-
-    if (trendTypes.includes(type)) {
-      // For trend MAs: add close_price as a pseudo-indicator so we can compare
-      // "close price is above SMA → long, below → short"
-      const newIndicators = [...indicators];
-      const closeIndex = newIndicators.length;
-      newIndicators.push({ type: 'close_price', params: {} });
-      const maIndex = newIndicators.length;
-      newIndicators.push({ type, params });
-      setIndicators(newIndicators);
-      setRules((prev) => [...prev, {
-        indicator_index: closeIndex,
-        condition: 'is_above',
-        reference_indicator: maIndex,
-        direction: 'both',
-      }]);
-    } else {
-      const newIndex = indicators.length;
-      setIndicators((prev) => [...prev, { type, params }]);
-
-      const defaultRule = getDefaultRule(type, newIndex);
-      if (defaultRule) {
-        setRules((prev) => [...prev, defaultRule]);
-      }
-    }
-
+    const newBlocks = getDefaultBlocks(type);
+    setBlocks((prev) => [...prev, ...newBlocks]);
     setActivePreset(null);
-    setShowAddDropdown(false);
-  }, [indicators.length]);
-
-  const removeIndicator = useCallback((index: number) => {
-    const trendTypes: IndicatorType[] = ['sma', 'ema', 'dema', 'tema', 'wma', 'hull_ma', 'vwma', 'linear_regression', 'parabolic_sar'];
-    const removedType = indicators[index]?.type;
-
-    // Remove the indicator and clean up rules (filter stale + shift indices)
-    let newIndicators = indicators.filter((_, i) => i !== index);
-    let newRules = rules
-      .filter((r) => r.indicator_index !== index && r.reference_indicator !== index)
-      .map((r) => ({
-        ...r,
-        indicator_index: r.indicator_index > index ? r.indicator_index - 1 : r.indicator_index,
-        reference_indicator: r.reference_indicator !== undefined && r.reference_indicator > index
-          ? r.reference_indicator - 1
-          : r.reference_indicator,
-      }));
-
-    // Auto-fix orphaned trend MAs: if a trend indicator lost all its rules,
-    // add a close_price pseudo-indicator and "price is_above MA → both" rule
-    if (removedType !== 'close_price') {
-      const orphanedIndices: number[] = [];
-      for (let i = 0; i < newIndicators.length; i++) {
-        if (trendTypes.includes(newIndicators[i].type)) {
-          const hasRule = newRules.some(
-            (r) => r.indicator_index === i || r.reference_indicator === i,
-          );
-          if (!hasRule) orphanedIndices.push(i);
-        }
-      }
-
-      if (orphanedIndices.length > 0) {
-        // Reuse existing close_price or add a new one
-        let closeIdx = newIndicators.findIndex((ind) => ind.type === 'close_price');
-        if (closeIdx === -1) {
-          closeIdx = newIndicators.length;
-          newIndicators = [...newIndicators, { type: 'close_price' as IndicatorType, params: {} }];
-        }
-        for (const orphanIdx of orphanedIndices) {
-          newRules = [...newRules, {
-            indicator_index: closeIdx,
-            condition: 'is_above' as SignalCondition,
-            reference_indicator: orphanIdx,
-            direction: 'both' as const,
-          }];
-        }
-      }
-    }
-
-    setIndicators(newIndicators);
-    setRules(newRules);
-    setActivePreset(null);
-  }, [indicators, rules]);
-
-  const updateIndicatorParam = useCallback((index: number, key: string, value: number) => {
-    setIndicators((prev) =>
-      prev.map((ind, i) =>
-        i === index ? { ...ind, params: { ...ind.params, [key]: value } } : ind,
-      ),
-    );
-    setActivePreset(null);
+    setShowAddModal(false);
   }, []);
 
-  const addRule = useCallback((indicatorIndex: number) => {
-    const type = indicators[indicatorIndex]?.type;
-    const defaultRule = getDefaultRule(type, indicatorIndex);
-    if (defaultRule) {
-      setRules((prev) => [...prev, defaultRule]);
-    } else {
-      // Trend types: find/create a close_price indicator and compare against it
-      const trendTypes: IndicatorType[] = ['sma', 'ema', 'dema', 'tema', 'wma', 'hull_ma', 'vwma', 'linear_regression', 'parabolic_sar'];
-      if (trendTypes.includes(type)) {
-        let closeIdx = indicators.findIndex((ind) => ind.type === 'close_price');
-        if (closeIdx === -1) {
-          closeIdx = indicators.length;
-          setIndicators((prev) => [...prev, { type: 'close_price' as IndicatorType, params: {} }]);
-        }
-        setRules((prev) => [...prev, {
-          indicator_index: closeIdx,
-          condition: 'is_above' as SignalCondition,
-          reference_indicator: indicatorIndex,
-          direction: 'both' as const,
-        }]);
-      } else {
-        setRules((prev) => [...prev, {
-          indicator_index: indicatorIndex,
-          condition: 'is_above' as SignalCondition,
-          threshold: 0,
-          direction: 'both' as const,
-        }]);
-      }
-    }
-    setActivePreset(null);
-  }, [indicators]);
+  const removeBlock = useCallback(
+    (id: string) => {
+      setBlocks((prev) => removeBlockCascade(prev, id));
+      setActivePreset(null);
+      if (expandedBlockId === id) setExpandedBlockId(null);
+    },
+    [expandedBlockId],
+  );
 
-  const updateRule = useCallback(
-    (ruleIndex: number, updates: Partial<SignalRule>) => {
-      setRules((prev) => prev.map((r, i) => (i === ruleIndex ? { ...r, ...updates } : r)));
+  const updateIndicatorParam = useCallback(
+    (blockId: string, key: string, value: number) => {
+      setBlocks((prev) =>
+        prev.map((b) =>
+          b.id === blockId && b.kind === 'indicator'
+            ? ({ ...b, params: { ...(b as IndicatorBlock).params, [key]: value } } as IndicatorBlock)
+            : b,
+        ),
+      );
       setActivePreset(null);
     },
     [],
   );
 
-  const removeRule = useCallback((ruleIndex: number) => {
-    setRules((prev) => prev.filter((_, i) => i !== ruleIndex));
-    setActivePreset(null);
-  }, []);
+  const updateTrigger = useCallback(
+    (blockId: string, updates: Partial<Pick<TriggerBlock, 'condition' | 'threshold'>>) => {
+      setBlocks((prev) =>
+        prev.map((b) =>
+          b.id === blockId && b.kind === 'trigger'
+            ? ({ ...b, ...updates } as TriggerBlock)
+            : b,
+        ),
+      );
+      setActivePreset(null);
+    },
+    [],
+  );
 
-  // Theme
+  const updateAction = useCallback(
+    (blockId: string, direction: ActionBlock['direction']) => {
+      setBlocks((prev) =>
+        prev.map((b) =>
+          b.id === blockId && b.kind === 'action'
+            ? ({ ...b, direction } as ActionBlock)
+            : b,
+        ),
+      );
+      setActivePreset(null);
+    },
+    [],
+  );
+
+  // Drag and drop
+  const handleDragEnd = useCallback(
+    (result: DropResult) => {
+      if (!result.destination) return;
+      const from = result.source.index;
+      const to = result.destination.index;
+      if (from === to) return;
+
+      const reordered = [...blocks];
+      const [moved] = reordered.splice(from, 1);
+      reordered.splice(to, 0, moved);
+
+      if (isValidOrder(reordered)) {
+        setBlocks(reordered);
+        setActivePreset(null);
+      }
+      // Invalid drop: silently reject, blocks stay in original order
+    },
+    [blocks],
+  );
+
+  // Theme tokens
   const cardBg = isLight ? 'bg-white' : 'bg-zinc-900/50';
   const cardBorder = isLight ? 'border-gray-200' : 'border-zinc-800';
   const tertBg = isLight ? 'bg-gray-50' : 'bg-zinc-800/50';
@@ -336,20 +292,45 @@ export function StrategyBuilder({ stock, priceData, isLight, onClose }: Strategy
   const textSecondary = isLight ? 'text-gray-500' : 'text-zinc-400';
   const textMuted = isLight ? 'text-gray-400' : 'text-zinc-500';
 
+  // Count indicator blocks (for combine logic toggle visibility)
+  const indicatorCount = blocks.filter((b) => b.kind === 'indicator').length;
+
   return (
     <div className={cn('rounded-xl border', cardBorder, cardBg)}>
       {/* Top Bar */}
-      <div className={cn('flex items-center gap-3 px-4 py-3 border-b flex-wrap', cardBorder)}>
+      <div
+        className={cn(
+          'flex items-center gap-3 px-4 py-3 border-b flex-wrap',
+          cardBorder,
+        )}
+      >
         <div className="flex items-center gap-2 mr-auto">
-          <h2 className={cn('text-base font-semibold font-[DM_Sans]', textPrimary)}>
+          <h2
+            className={cn(
+              'text-base font-semibold font-[DM_Sans]',
+              textPrimary,
+            )}
+          >
             {stock?.name ?? 'Select a stock'}
           </h2>
-          {stock && <span className="font-mono text-xs text-zinc-500">{stock.ticker}</span>}
-          {stock && <span className="font-mono text-xs text-zinc-500">Lot: {stock.lot_size}</span>}
+          {stock && (
+            <span className="font-mono text-xs text-zinc-500">
+              {stock.ticker}
+            </span>
+          )}
+          {stock && (
+            <span className="font-mono text-xs text-zinc-500">
+              Lot: {stock.lot_size}
+            </span>
+          )}
         </div>
         <button
           onClick={onClose}
-          className={cn('text-xs px-2 py-1 rounded', textMuted, 'hover:text-[#EF4444]')}
+          className={cn(
+            'text-xs px-2 py-1 rounded',
+            textMuted,
+            'hover:text-[#EF4444]',
+          )}
         >
           Close
         </button>
@@ -411,7 +392,10 @@ export function StrategyBuilder({ stock, priceData, isLight, onClose }: Strategy
             step={0.05}
             value={sizing.z_multiplier}
             onChange={(e) =>
-              setSizing((s) => ({ ...s, z_multiplier: Number(e.target.value) }))
+              setSizing((s) => ({
+                ...s,
+                z_multiplier: Number(e.target.value),
+              }))
             }
             className="w-16 h-1 accent-[#FF9933]"
           />
@@ -437,89 +421,131 @@ export function StrategyBuilder({ stock, priceData, isLight, onClose }: Strategy
         </div>
       </div>
 
-      {/* Preset Pills with tooltips */}
-      <div className={cn('flex gap-1.5 px-4 py-2.5 border-b flex-wrap', cardBorder)}>
-        <span className={cn('text-[11px] font-medium self-center mr-1', textMuted)}>Presets</span>
+      {/* Preset Pills */}
+      <div
+        className={cn(
+          'flex gap-1.5 px-4 py-2.5 border-b flex-wrap',
+          cardBorder,
+        )}
+      >
+        <span
+          className={cn('text-[11px] font-medium self-center mr-1', textMuted)}
+        >
+          Presets
+        </span>
         {PRESETS.map((p) => (
-          <button
+          <Tooltip
             key={p.id}
-            onClick={() => applyPreset(p)}
-            title={PRESET_TOOLTIPS[p.id] ?? p.name}
-            className={cn(
-              'px-2.5 py-1 rounded-md text-[11px] font-medium border transition-all',
-              activePreset === p.id
-                ? 'bg-[#FF9933]/15 border-[#FF9933]/30 text-[#FF9933]'
-                : isLight
-                  ? 'bg-gray-50 border-gray-200 text-gray-600 hover:border-[#FF9933] hover:text-[#FF9933]'
-                  : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-[#FF9933] hover:text-[#FF9933]',
-            )}
+            text={PRESET_TOOLTIPS[p.id] ?? p.name}
+            isLight={isLight}
           >
-            {p.name}
-          </button>
+            <button
+              onClick={() => applyPreset(p)}
+              className={cn(
+                'px-2.5 py-1 rounded-md text-[11px] font-medium border transition-all',
+                activePreset === p.id
+                  ? 'bg-[#FF9933]/15 border-[#FF9933]/30 text-[#FF9933]'
+                  : isLight
+                    ? 'bg-gray-50 border-gray-200 text-gray-600 hover:border-[#FF9933] hover:text-[#FF9933]'
+                    : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-[#FF9933] hover:text-[#FF9933]',
+              )}
+            >
+              {p.name}
+            </button>
+          </Tooltip>
         ))}
       </div>
 
-      {/* Split layout: Config + Results */}
+      {/* Split layout: Pipeline + Results */}
       <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr]">
-        {/* Left: Indicator Config */}
-        <div className={cn('p-4 space-y-3 border-r', cardBorder)}>
-          {/* Active indicators */}
-          {indicators.map((ind, idx) => (
-            <IndicatorCard
-              key={`${ind.type}-${idx}`}
-              indicator={ind}
-              indicatorIndex={idx}
-              rules={rules.filter((r) => r.indicator_index === idx || r.reference_indicator === idx)}
-              allRules={rules}
-              indicators={indicators}
-              onUpdateParam={(key, val) => updateIndicatorParam(idx, key, val)}
-              onRemove={() => removeIndicator(idx)}
-              onAddRule={() => addRule(idx)}
-              onUpdateRule={updateRule}
-              onRemoveRule={removeRule}
-              isLight={isLight}
-            />
-          ))}
+        {/* Left: Block Pipeline */}
+        <div className={cn('p-4 space-y-0 border-r', cardBorder)}>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="pipeline">
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="space-y-0"
+                >
+                  {blocks.map((block, index) => (
+                    <Draggable
+                      key={block.id}
+                      draggableId={block.id}
+                      index={index}
+                    >
+                      {(dragProvided, snapshot) => (
+                        <div
+                          ref={dragProvided.innerRef}
+                          {...dragProvided.draggableProps}
+                          className="relative"
+                        >
+                          {/* Connector line between blocks */}
+                          {index > 0 && (
+                            <Connector
+                              isLight={isLight}
+                              showLogicToggle={
+                                indicatorCount >= 2 &&
+                                block.kind === 'indicator' &&
+                                index > 0 &&
+                                blocks[index - 1]?.kind === 'action'
+                              }
+                              combineLogic={combineLogic}
+                              onToggleLogic={() =>
+                                setCombineLogic((l) =>
+                                  l === 'and' ? 'or' : 'and',
+                                )
+                              }
+                            />
+                          )}
 
-          {/* Filter logic toggle — only shown with 2+ indicators */}
-          {indicators.length >= 2 && (
-            <div className="flex items-center gap-2 px-2">
-              <span className={cn('text-[11px]', textMuted)}>Filter</span>
-              <button
-                onClick={() => setCombineLogic('and')}
-                className={cn(
-                  'px-2 py-0.5 rounded text-[11px] font-medium border transition-all',
-                  combineLogic === 'and'
-                    ? 'bg-[#FF9933]/15 border-[#FF9933]/30 text-[#FF9933]'
-                    : isLight
-                      ? 'border-gray-200 text-gray-500'
-                      : 'border-zinc-700 text-zinc-500',
-                )}
-                title="All indicators must agree for a signal to fire"
-              >
-                All must agree
-              </button>
-              <button
-                onClick={() => setCombineLogic('or')}
-                className={cn(
-                  'px-2 py-0.5 rounded text-[11px] font-medium border transition-all',
-                  combineLogic === 'or'
-                    ? 'bg-[#FF9933]/15 border-[#FF9933]/30 text-[#FF9933]'
-                    : isLight
-                      ? 'border-gray-200 text-gray-500'
-                      : 'border-zinc-700 text-zinc-500',
-                )}
-                title="Any indicator can trigger a signal independently"
-              >
-                Any triggers
-              </button>
-            </div>
-          )}
+                          <BlockPill
+                            block={block}
+                            blocks={blocks}
+                            isExpanded={expandedBlockId === block.id}
+                            isDragging={snapshot.isDragging}
+                            isLight={isLight}
+                            dragHandleProps={dragProvided.dragHandleProps}
+                            onToggleExpand={() =>
+                              setExpandedBlockId((prev) =>
+                                prev === block.id ? null : block.id,
+                              )
+                            }
+                            onRemove={() => removeBlock(block.id)}
+                            onUpdateIndicatorParam={(key, val) =>
+                              updateIndicatorParam(block.id, key, val)
+                            }
+                            onUpdateTrigger={(updates) =>
+                              updateTrigger(block.id, updates)
+                            }
+                            onUpdateAction={(dir) =>
+                              updateAction(block.id, dir)
+                            }
+                          />
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
 
           {/* Add Indicator Button */}
-          <div className="relative">
+          <div className="relative pt-3">
+            {blocks.length > 0 && (
+              <div className="flex justify-center mb-2">
+                <div
+                  className={cn(
+                    'w-[2px] h-4 border-l-2 border-dashed',
+                    isLight ? 'border-gray-300' : 'border-zinc-600',
+                  )}
+                />
+              </div>
+            )}
             <button
-              onClick={() => setShowAddDropdown((v) => !v)}
+              onClick={() => setShowAddModal(true)}
               className={cn(
                 'w-full py-2 rounded-lg border border-dashed text-xs font-medium transition-all',
                 isLight
@@ -529,20 +555,21 @@ export function StrategyBuilder({ stock, priceData, isLight, onClose }: Strategy
             >
               + Add Indicator
             </button>
-
-            {showAddDropdown && (
-              <AddIndicatorDropdown
-                onSelect={addIndicator}
-                onClose={() => setShowAddDropdown(false)}
-                isLight={isLight}
-              />
-            )}
           </div>
 
-          {indicators.length === 0 && (
+          {blocks.length === 0 && (
             <div className={cn('text-center py-6 text-xs', textSecondary)}>
               Select a preset or add indicators to build your strategy.
             </div>
+          )}
+
+          {/* Add Block Modal */}
+          {showAddModal && (
+            <AddBlockModal
+              onSelect={addIndicator}
+              onClose={() => setShowAddModal(false)}
+              isLight={isLight}
+            />
           )}
         </div>
 
@@ -577,54 +604,322 @@ function SizingItem({
 }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className={cn('text-[11px]', isLight ? 'text-gray-400' : 'text-zinc-500')}>{label}</span>
+      <span
+        className={cn(
+          'text-[11px]',
+          isLight ? 'text-gray-400' : 'text-zinc-500',
+        )}
+      >
+        {label}
+      </span>
       {children}
       <span className="font-mono text-xs text-[#FF9933]">{value}</span>
     </div>
   );
 }
 
-function Tooltip({ text, children, isLight }: { text: string; children: React.ReactNode; isLight: boolean }) {
+function Tooltip({
+  text,
+  children,
+  isLight,
+}: {
+  text: string;
+  children: React.ReactNode;
+  isLight: boolean;
+}) {
   return (
     <span className="relative group/tip">
       {children}
-      <span className={cn(
-        'absolute z-50 left-0 top-full mt-1 w-56 px-2.5 py-1.5 rounded-lg text-[10px] leading-snug shadow-lg',
-        'opacity-0 pointer-events-none group-hover/tip:opacity-100 transition-opacity duration-150',
-        isLight ? 'bg-gray-900 text-gray-100' : 'bg-zinc-100 text-zinc-900',
-      )}>
+      <span
+        className={cn(
+          'absolute z-50 left-0 top-full mt-1 w-56 px-2.5 py-1.5 rounded-lg text-[10px] leading-snug shadow-lg',
+          'opacity-0 pointer-events-none group-hover/tip:opacity-100 transition-opacity duration-150',
+          isLight ? 'bg-gray-900 text-gray-100' : 'bg-zinc-100 text-zinc-900',
+        )}
+      >
         {text}
       </span>
     </span>
   );
 }
 
-function IndicatorCard({
-  indicator,
-  indicatorIndex,
-  rules,
-  allRules,
-  indicators,
-  onUpdateParam,
-  onRemove,
-  onAddRule,
-  onUpdateRule,
-  onRemoveRule,
+// ---------------------------------------------------------------------------
+// Connector line between blocks
+// ---------------------------------------------------------------------------
+
+function Connector({
   isLight,
+  showLogicToggle,
+  combineLogic,
+  onToggleLogic,
 }: {
-  indicator: IndicatorConfig;
-  indicatorIndex: number;
-  rules: SignalRule[];
-  allRules: SignalRule[];
-  indicators: IndicatorConfig[];
-  onUpdateParam: (key: string, value: number) => void;
-  onRemove: () => void;
-  onAddRule: () => void;
-  onUpdateRule: (ruleIndex: number, updates: Partial<SignalRule>) => void;
-  onRemoveRule: (ruleIndex: number) => void;
   isLight: boolean;
+  showLogicToggle: boolean;
+  combineLogic: CombineLogic;
+  onToggleLogic: () => void;
 }) {
-  const meta = INDICATOR_META[indicator.type];
+  return (
+    <div className="flex flex-col items-center py-0">
+      <div
+        className={cn(
+          'w-[2px] border-l-2 border-dashed',
+          showLogicToggle ? 'h-2' : 'h-4',
+          isLight ? 'border-gray-300' : 'border-zinc-600',
+        )}
+      />
+      {showLogicToggle && (
+        <>
+          <button
+            onClick={onToggleLogic}
+            className={cn(
+              'px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-all my-0.5',
+              'bg-[#FF9933]/10 border-[#FF9933]/30 text-[#FF9933] hover:bg-[#FF9933]/20',
+            )}
+          >
+            {combineLogic === 'and' ? 'AND' : 'OR'}
+          </button>
+          <div
+            className={cn(
+              'w-[2px] h-2 border-l-2 border-dashed',
+              isLight ? 'border-gray-300' : 'border-zinc-600',
+            )}
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Block Pill
+// ---------------------------------------------------------------------------
+
+function BlockPill({
+  block,
+  blocks,
+  isExpanded,
+  isDragging,
+  isLight,
+  dragHandleProps,
+  onToggleExpand,
+  onRemove,
+  onUpdateIndicatorParam,
+  onUpdateTrigger,
+  onUpdateAction,
+}: {
+  block: PipelineBlock;
+  blocks: readonly PipelineBlock[];
+  isExpanded: boolean;
+  isDragging: boolean;
+  isLight: boolean;
+  dragHandleProps: DraggableProvidedDragHandleProps | null;
+  onToggleExpand: () => void;
+  onRemove: () => void;
+  onUpdateIndicatorParam: (key: string, value: number) => void;
+  onUpdateTrigger: (updates: Partial<Pick<TriggerBlock, 'condition' | 'threshold'>>) => void;
+  onUpdateAction: (direction: ActionBlock['direction']) => void;
+}) {
+  const borderColor = getBlockBorderColor(block, blocks);
+  const label = getBlockLabel(block, blocks);
+  const tooltip = getBlockTooltip(block, blocks);
+  const isGradient =
+    block.kind === 'action' && (block as ActionBlock).direction === 'both';
+
+  const kindBadge =
+    block.kind === 'indicator'
+      ? 'IND'
+      : block.kind === 'trigger'
+        ? 'IF'
+        : 'DO';
+
+  const pillBg = isLight ? 'bg-white' : 'bg-zinc-900';
+  const pillBorder = isLight ? 'border-gray-200' : 'border-zinc-700';
+  const textPrimary = isLight ? 'text-gray-900' : 'text-zinc-100';
+  const textMuted = isLight ? 'text-gray-400' : 'text-zinc-500';
+
+  return (
+    <Tooltip text={tooltip} isLight={isLight}>
+      <div
+        className={cn(
+          'rounded-lg border transition-shadow',
+          pillBg,
+          pillBorder,
+          isDragging && 'shadow-lg ring-2 ring-[#FF9933]/30',
+          isExpanded && 'ring-1 ring-[#FF9933]/20',
+        )}
+      >
+        {/* Collapsed pill row */}
+        <div className="flex items-center gap-0 min-h-[36px]">
+          {/* Left color border */}
+          {isGradient ? (
+            <div
+              className="w-1 self-stretch rounded-l-lg flex-shrink-0"
+              style={{
+                background:
+                  'linear-gradient(to bottom, #22C55E 50%, #EF4444 50%)',
+              }}
+            />
+          ) : (
+            <div
+              className="w-1 self-stretch rounded-l-lg flex-shrink-0"
+              style={{ backgroundColor: borderColor }}
+            />
+          )}
+
+          {/* Drag handle */}
+          <div
+            {...(dragHandleProps ?? {})}
+            className={cn(
+              'flex items-center px-1.5 cursor-grab active:cursor-grabbing select-none',
+              textMuted,
+            )}
+            style={{ fontSize: '14px', lineHeight: 1, letterSpacing: '1px' }}
+          >
+            &#x2261;
+          </div>
+
+          {/* Kind badge */}
+          <span
+            className={cn(
+              'text-[9px] font-bold uppercase px-1 py-0.5 rounded mr-1.5 flex-shrink-0',
+              block.kind === 'indicator'
+                ? 'bg-blue-500/10 text-blue-400'
+                : block.kind === 'trigger'
+                  ? 'bg-orange-500/10 text-orange-400'
+                  : 'bg-green-500/10 text-green-400',
+            )}
+          >
+            {kindBadge}
+          </span>
+
+          {/* Label */}
+          <button
+            onClick={onToggleExpand}
+            className={cn(
+              'flex-1 text-left text-[12px] font-medium truncate cursor-pointer',
+              textPrimary,
+            )}
+          >
+            {label}
+          </button>
+
+          {/* Remove */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            className={cn(
+              'text-[11px] px-2 py-1 flex-shrink-0 transition-colors',
+              textMuted,
+              'hover:text-[#EF4444]',
+            )}
+          >
+            &#x2715;
+          </button>
+        </div>
+
+        {/* Expanded inline editor */}
+        {isExpanded && (
+          <div
+            className={cn(
+              'px-3 pb-2.5 pt-1 border-t',
+              isLight ? 'border-gray-100' : 'border-zinc-800',
+            )}
+          >
+            {block.kind === 'indicator' && (
+              <IndicatorEditor
+                block={block as IndicatorBlock}
+                isLight={isLight}
+                onUpdateParam={onUpdateIndicatorParam}
+              />
+            )}
+            {block.kind === 'trigger' && (
+              <TriggerEditor
+                block={block as TriggerBlock}
+                blocks={blocks}
+                isLight={isLight}
+                onUpdate={onUpdateTrigger}
+              />
+            )}
+            {block.kind === 'action' && (
+              <ActionEditor
+                block={block as ActionBlock}
+                isLight={isLight}
+                onUpdate={onUpdateAction}
+              />
+            )}
+          </div>
+        )}
+      </div>
+    </Tooltip>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Inline editors
+// ---------------------------------------------------------------------------
+
+function IndicatorEditor({
+  block,
+  isLight,
+  onUpdateParam,
+}: {
+  block: IndicatorBlock;
+  isLight: boolean;
+  onUpdateParam: (key: string, value: number) => void;
+}) {
+  const meta = INDICATOR_META[block.indicatorType];
+  const textMuted = isLight ? 'text-gray-400' : 'text-zinc-500';
+  const inputCls = cn(
+    'w-20 px-2 py-1 rounded border text-xs font-mono text-center outline-none transition-colors',
+    isLight
+      ? 'bg-white border-gray-200 text-gray-900 focus:border-[#FF9933]'
+      : 'bg-zinc-900 border-zinc-700 text-[#FF9933] focus:border-[#FF9933]',
+  );
+
+  if (meta.params.length === 0) {
+    return (
+      <span className={cn('text-[11px]', textMuted)}>No parameters</span>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5">
+      {meta.params.map((p) => (
+        <div key={p.key} className="flex items-center gap-2">
+          <span className={cn('text-[11px] min-w-[60px]', textMuted)}>
+            {p.label}
+          </span>
+          <input
+            type="number"
+            min={p.min}
+            max={p.max}
+            step={p.step}
+            value={block.params[p.key] ?? p.default}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              if (!isNaN(v)) onUpdateParam(p.key, v);
+            }}
+            className={inputCls}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TriggerEditor({
+  block,
+  blocks,
+  isLight,
+  onUpdate,
+}: {
+  block: TriggerBlock;
+  blocks: readonly PipelineBlock[];
+  isLight: boolean;
+  onUpdate: (updates: Partial<Pick<TriggerBlock, 'condition' | 'threshold'>>) => void;
+}) {
   const textMuted = isLight ? 'text-gray-400' : 'text-zinc-500';
   const selectCls = cn(
     'text-[11px] font-mono px-1.5 py-0.5 rounded border outline-none',
@@ -639,141 +934,92 @@ function IndicatorCard({
       : 'bg-zinc-900 border-zinc-700 text-[#FF9933] focus:border-[#FF9933]',
   );
 
-  // Split rules into "owned" (this indicator drives the rule) and "referenced" (another indicator compares against this one)
-  const ownedRules = rules.filter((r) => r.indicator_index === indicatorIndex);
-  const referencedRules = rules.filter((r) => r.reference_indicator === indicatorIndex && r.indicator_index !== indicatorIndex);
+  const hasRef = !!block.referenceBlockId;
+  const refBlock = hasRef
+    ? findIndicatorBlock(blocks, block.referenceBlockId!)
+    : null;
 
   return (
-    <div
-      className={cn(
-        'rounded-lg border p-3',
-        isLight ? 'bg-gray-50 border-gray-200' : 'bg-zinc-800/50 border-zinc-700',
-      )}
-    >
-      {/* Header with tooltip */}
-      <div className="flex items-center justify-between mb-2">
-        <Tooltip text={meta.desc} isLight={isLight}>
-          <span className={cn('text-[13px] font-semibold font-[DM_Sans] cursor-help border-b border-dashed', isLight ? 'text-gray-900 border-gray-300' : 'text-zinc-100 border-zinc-600')}>
-            {meta.label}
-          </span>
-        </Tooltip>
-        <button
-          onClick={onRemove}
-          className={cn('text-[11px]', textMuted, 'hover:text-[#EF4444]')}
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className={cn('text-[11px]', textMuted)}>Condition</span>
+        <select
+          value={block.condition}
+          onChange={(e) =>
+            onUpdate({ condition: e.target.value as SignalCondition })
+          }
+          className={selectCls}
         >
-          Remove
-        </button>
+          <option value="crosses_above">crosses above</option>
+          <option value="crosses_below">crosses below</option>
+          <option value="is_above">is above</option>
+          <option value="is_below">is below</option>
+        </select>
+        {hasRef && refBlock ? (
+          <span
+            className={cn(
+              'text-[11px] font-mono',
+              isLight ? 'text-gray-600' : 'text-zinc-400',
+            )}
+          >
+            {formatBlockLabel(refBlock.indicatorType, refBlock.params)}
+          </span>
+        ) : (
+          <>
+            <span className={cn('text-[11px]', textMuted)}>Threshold</span>
+            <input
+              type="number"
+              value={block.threshold ?? 0}
+              onChange={(e) => onUpdate({ threshold: Number(e.target.value) })}
+              className={inputCls}
+            />
+          </>
+        )}
       </div>
-
-      {/* Parameters */}
-      {meta.params.map((p) => (
-        <div key={p.key} className="flex items-center gap-2 mb-1.5">
-          <span className={cn('text-[11px] min-w-[60px]', textMuted)}>{p.label}</span>
-          <input
-            type="number"
-            min={p.min}
-            max={p.max}
-            step={p.step}
-            value={indicator.params[p.key] ?? p.default}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              if (!isNaN(v)) onUpdateParam(p.key, v);
-            }}
-            className={cn(
-              'w-20 px-2 py-1 rounded border text-xs font-mono text-center outline-none transition-colors',
-              isLight
-                ? 'bg-white border-gray-200 text-gray-900 focus:border-[#FF9933]'
-                : 'bg-zinc-900 border-zinc-700 text-[#FF9933] focus:border-[#FF9933]',
-            )}
-          />
-        </div>
-      ))}
-
-      {/* Owned rules — editable */}
-      {ownedRules.map((rule) => {
-        const ruleIndex = allRules.indexOf(rule);
-        const hasRef = rule.reference_indicator != null;
-        const refMeta = hasRef ? INDICATOR_META[indicators[rule.reference_indicator!]?.type] : null;
-        const refLabel = refMeta ? `${refMeta.label}(${indicators[rule.reference_indicator!]?.params?.period ?? ''})` : null;
-
-        return (
-          <div
-            key={ruleIndex}
-            className={cn(
-              'flex items-center gap-1.5 mt-2 flex-wrap text-[11px]',
-              isLight ? 'text-gray-700' : 'text-zinc-300',
-            )}
-          >
-            <select
-              value={rule.condition}
-              onChange={(e) => onUpdateRule(ruleIndex, { condition: e.target.value as SignalCondition })}
-              className={selectCls}
-            >
-              <option value="crosses_above">crosses above</option>
-              <option value="crosses_below">crosses below</option>
-              <option value="is_above">is above</option>
-              <option value="is_below">is below</option>
-            </select>
-
-            {hasRef ? (
-              <span className={cn('font-mono text-[11px]', isLight ? 'text-gray-600' : 'text-zinc-400')}>
-                {refLabel}
-              </span>
-            ) : (
-              <input
-                type="number"
-                value={rule.threshold ?? 0}
-                onChange={(e) => onUpdateRule(ruleIndex, { threshold: Number(e.target.value) })}
-                className={inputCls}
-              />
-            )}
-
-            <select
-              value={rule.direction}
-              onChange={(e) => onUpdateRule(ruleIndex, { direction: e.target.value as 'long' | 'short' | 'both' })}
-              className={selectCls}
-            >
-              <option value="both">long/short</option>
-              <option value="long">long only</option>
-              <option value="short">short only</option>
-            </select>
-
-            <button
-              onClick={() => onRemoveRule(ruleIndex)}
-              className={cn('text-[10px] px-1 ml-auto', isLight ? 'text-gray-300 hover:text-red-500' : 'text-zinc-600 hover:text-red-400')}
-            >
-              ✕
-            </button>
-          </div>
-        );
-      })}
-
-      {/* Referenced rules — read-only indicator */}
-      {referencedRules.map((rule) => {
-        const srcMeta = INDICATOR_META[indicators[rule.indicator_index]?.type];
-        const srcLabel = srcMeta ? `${srcMeta.label}(${indicators[rule.indicator_index]?.params?.period ?? ''})` : '?';
-        const condLabel = rule.condition === 'crosses_above' ? 'crosses above' : rule.condition === 'crosses_below' ? 'crosses below' : rule.condition === 'is_above' ? 'is above' : 'is below';
-        return (
-          <div
-            key={`ref-${allRules.indexOf(rule)}`}
-            className={cn('mt-2 text-[10px] italic', textMuted)}
-          >
-            Used by: {srcLabel} {condLabel} this
-          </div>
-        );
-      })}
-
-      <button
-        onClick={onAddRule}
-        className={cn('text-[11px] mt-2', textMuted, 'hover:text-[#FF9933]')}
-      >
-        + Add Rule
-      </button>
     </div>
   );
 }
 
-function AddIndicatorDropdown({
+function ActionEditor({
+  block,
+  isLight,
+  onUpdate,
+}: {
+  block: ActionBlock;
+  isLight: boolean;
+  onUpdate: (direction: ActionBlock['direction']) => void;
+}) {
+  const selectCls = cn(
+    'text-[11px] font-mono px-1.5 py-0.5 rounded border outline-none',
+    isLight
+      ? 'bg-white border-gray-200 text-gray-900 focus:border-[#FF9933]'
+      : 'bg-zinc-900 border-zinc-700 text-zinc-200 focus:border-[#FF9933]',
+  );
+  const textMuted = isLight ? 'text-gray-400' : 'text-zinc-500';
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className={cn('text-[11px]', textMuted)}>Direction</span>
+      <select
+        value={block.direction}
+        onChange={(e) =>
+          onUpdate(e.target.value as ActionBlock['direction'])
+        }
+        className={selectCls}
+      >
+        <option value="both">Long/Short</option>
+        <option value="long">Long only</option>
+        <option value="short">Short only</option>
+      </select>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Add Block Modal
+// ---------------------------------------------------------------------------
+
+function AddBlockModal({
   onSelect,
   onClose,
   isLight,
@@ -782,6 +1028,8 @@ function AddIndicatorDropdown({
   onClose: () => void;
   isLight: boolean;
 }) {
+  const textMuted = isLight ? 'text-gray-400' : 'text-zinc-500';
+
   return (
     <>
       {/* Backdrop */}
@@ -792,66 +1040,62 @@ function AddIndicatorDropdown({
           isLight ? 'bg-white border-gray-200' : 'bg-zinc-900 border-zinc-700',
         )}
       >
-        <div className={cn('sticky top-0 px-3 py-2 border-b text-xs font-semibold', isLight ? 'bg-white border-gray-200 text-gray-900' : 'bg-zinc-900 border-zinc-700 text-zinc-100')}>
-          Select Indicator
+        <div
+          className={cn(
+            'sticky top-0 px-3 py-2 border-b text-xs font-semibold flex items-center justify-between',
+            isLight
+              ? 'bg-white border-gray-200 text-gray-900'
+              : 'bg-zinc-900 border-zinc-700 text-zinc-100',
+          )}
+        >
+          <span>Add Indicator Block</span>
+          <button
+            onClick={onClose}
+            className={cn('text-[11px]', textMuted, 'hover:text-[#EF4444]')}
+          >
+            &#x2715;
+          </button>
         </div>
+
         {INDICATOR_CATEGORIES.map((cat) => {
-          const items = Object.entries(INDICATOR_META).filter(
-            ([key, meta]) => meta.category === cat && key !== 'close_price',
-          ) as [IndicatorType, IndicatorMeta][];
+          const items = (
+            Object.entries(INDICATOR_META) as [IndicatorType, (typeof INDICATOR_META)[IndicatorType]][]
+          ).filter(
+            ([key, m]) => m.category === cat && key !== 'close_price',
+          );
+          if (items.length === 0) return null;
+
+          const catColor = CATEGORY_COLORS[cat] ?? '#6B7280';
 
           return (
-            <div key={cat}>
+            <div key={cat} className="px-3 py-2">
               <div
-                className={cn(
-                  'px-3 py-1 text-[10px] font-semibold uppercase tracking-wider sticky top-0',
-                  isLight ? 'bg-gray-50 text-gray-400' : 'bg-zinc-800 text-zinc-500',
-                )}
+                className="text-[10px] font-bold uppercase tracking-wider mb-1.5"
+                style={{ color: catColor }}
               >
                 {cat}
               </div>
-              {items.map(([type, meta]) => (
-                <DropdownItem key={type} type={type} meta={meta} onSelect={onSelect} isLight={isLight} />
-              ))}
+              <div className="flex flex-wrap gap-1">
+                {items.map(([key, m]) => (
+                  <Tooltip key={key} text={m.desc} isLight={isLight}>
+                    <button
+                      onClick={() => onSelect(key)}
+                      className={cn(
+                        'px-2 py-1 rounded text-[11px] font-medium border transition-all',
+                        isLight
+                          ? 'bg-gray-50 border-gray-200 text-gray-700 hover:border-[#FF9933] hover:text-[#FF9933]'
+                          : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-[#FF9933] hover:text-[#FF9933]',
+                      )}
+                    >
+                      {m.label}
+                    </button>
+                  </Tooltip>
+                ))}
+              </div>
             </div>
           );
         })}
       </div>
     </>
-  );
-}
-
-function DropdownItem({
-  type,
-  meta,
-  onSelect,
-  isLight,
-}: {
-  type: IndicatorType;
-  meta: IndicatorMeta;
-  onSelect: (type: IndicatorType) => void;
-  isLight: boolean;
-}) {
-  return (
-    <div className="relative group/dd">
-      <button
-        onClick={() => onSelect(type)}
-        className={cn(
-          'w-full text-left px-3 py-1.5 text-xs transition-colors',
-          isLight
-            ? 'text-gray-700 hover:bg-gray-50 hover:text-[#FF9933]'
-            : 'text-zinc-300 hover:bg-zinc-800 hover:text-[#FF9933]',
-        )}
-      >
-        {meta.label}
-      </button>
-      <div className={cn(
-        'absolute z-[110] right-full top-0 mr-2 w-52 px-2.5 py-1.5 rounded-lg text-[10px] leading-snug shadow-lg',
-        'opacity-0 pointer-events-none group-hover/dd:opacity-100 transition-opacity duration-150',
-        isLight ? 'bg-gray-900 text-gray-100' : 'bg-zinc-100 text-zinc-900',
-      )}>
-        {meta.desc}
-      </div>
-    </div>
   );
 }
