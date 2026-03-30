@@ -73,6 +73,15 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
     }
   }, []);
 
+  // Auto-select first stock on mount so the strategy builder is ready
+  const didAutoSelect = useRef(false);
+  useEffect(() => {
+    if (!didAutoSelect.current && sectorStocks.length > 0 && !selectedTicker) {
+      didAutoSelect.current = true;
+      handleSelectStock(sectorStocks[0].ticker);
+    }
+  }, [sectorStocks, selectedTicker, handleSelectStock]);
+
   const handleTogglePortfolio = useCallback((ticker: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setPortfolio((prev) => {
