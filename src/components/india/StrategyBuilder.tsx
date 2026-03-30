@@ -98,6 +98,32 @@ function getActionLabel(action: ActionBlock): string {
   return 'Go Long/Short';
 }
 
+function getBlockWarning(
+  block: PipelineBlock,
+  blocks: readonly PipelineBlock[],
+): string | null {
+  if (block.kind === 'indicator') {
+    // Check if any trigger references this indicator
+    const hasRule = blocks.some(
+      (b) => b.kind === 'trigger' && ((b as TriggerBlock).sourceBlockId === block.id || (b as TriggerBlock).referenceBlockId === block.id),
+    );
+    if (!hasRule) return 'Add a rule (IF) to use this indicator';
+  }
+  if (block.kind === 'trigger') {
+    const hasAction = blocks.some(
+      (b) => b.kind === 'action' && (b as ActionBlock).triggerBlockId === block.id,
+    );
+    if (!hasAction) return 'Add an action (DO) to complete this rule';
+  }
+  if (block.kind === 'action') {
+    const trigger = blocks.find(
+      (b) => b.kind === 'trigger' && b.id === (block as ActionBlock).triggerBlockId,
+    );
+    if (!trigger) return 'Missing trigger (IF) block';
+  }
+  return null;
+}
+
 function getBlockBorderColor(
   block: PipelineBlock,
   _blocks: readonly PipelineBlock[],
@@ -217,8 +243,13 @@ export function StrategyBuilder({
 
   // Block mutations
   const addIndicator = useCallback((type: IndicatorType) => {
-    const newBlocks = getDefaultBlocks(type);
-    setBlocks((prev) => [...prev, ...newBlocks]);
+    const meta = INDICATOR_META[type];
+    const params: Record<string, number> = {};
+    for (const p of meta.params) {
+      params[p.key] = p.default;
+    }
+    const ind: IndicatorBlock = { id: blockId(), kind: 'indicator', indicatorType: type, params };
+    setBlocks((prev) => [...prev, ind]);
     setActivePreset(null);
     setShowAddModal(false);
   }, []);
@@ -776,6 +807,7 @@ function BlockPill({
   const borderColor = getBlockBorderColor(block, blocks);
   const label = getBlockLabel(block, blocks);
   const tooltip = getBlockTooltip(block, blocks);
+  const warning = getBlockWarning(block, blocks);
   const isGradient =
     block.kind === 'action' && (block as ActionBlock).direction === 'both';
 
@@ -872,6 +904,13 @@ function BlockPill({
             &#x2715;
           </button>
         </div>
+
+        {/* Warning for incomplete blocks */}
+        {warning && (
+          <div className="px-3 py-1.5 text-[10px] text-[#EF4444] font-medium">
+            {warning}
+          </div>
+        )}
 
         {/* Expanded inline editor */}
         {isExpanded && (
