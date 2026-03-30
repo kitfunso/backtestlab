@@ -1,0 +1,1664 @@
+{
+  "stocks": [
+    {
+      "ticker": "360ONE",
+      "yf": "360ONE.NS",
+      "name": "360 ONE WAM LIMITED",
+      "lot_size": 500,
+      "sector": "financials"
+    },
+    {
+      "ticker": "ABB",
+      "yf": "ABB.NS",
+      "name": "ABB India Limited",
+      "lot_size": 125,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "ABCAPITAL",
+      "yf": "ABCAPITAL.NS",
+      "name": "Aditya Birla Capital Ltd",
+      "lot_size": 3100,
+      "sector": "financials"
+    },
+    {
+      "ticker": "ADANIENSOL",
+      "yf": "ADANIENSOL.NS",
+      "name": "Adani Energy Solutions Limited",
+      "lot_size": 675,
+      "sector": "energy"
+    },
+    {
+      "ticker": "ADANIENT",
+      "yf": "ADANIENT.NS",
+      "name": "Adani Enterprises Ltd.",
+      "lot_size": 309,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "ADANIGREEN",
+      "yf": "ADANIGREEN.NS",
+      "name": "Adani Green Energy Limited",
+      "lot_size": 600,
+      "sector": "energy"
+    },
+    {
+      "ticker": "ADANIPORTS",
+      "yf": "ADANIPORTS.NS",
+      "name": "Adani Ports and Special Economic Zone Ltd",
+      "lot_size": 475,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "ALKEM",
+      "yf": "ALKEM.NS",
+      "name": "Alkem Laboratories Limited",
+      "lot_size": 125,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "AMBER",
+      "yf": "AMBER.NS",
+      "name": "Amber Enterprises India Limited",
+      "lot_size": 100,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "AMBUJACEM",
+      "yf": "AMBUJACEM.NS",
+      "name": "Ambuja Cements Ltd.",
+      "lot_size": 1050,
+      "sector": "materials"
+    },
+    {
+      "ticker": "ANGELONE",
+      "yf": "ANGELONE.NS",
+      "name": "ANGEL ONE LIMITED",
+      "lot_size": 2500,
+      "sector": "financials"
+    },
+    {
+      "ticker": "APLAPOLLO",
+      "yf": "APLAPOLLO.NS",
+      "name": "APL Apollo Tubes Limited",
+      "lot_size": 350,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "APOLLOHOSP",
+      "yf": "APOLLOHOSP.NS",
+      "name": "Apollo Hospitals Enterprises Ltd.",
+      "lot_size": 125,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "ASHOKLEY",
+      "yf": "ASHOKLEY.NS",
+      "name": "Ashok Leyland Ltd.",
+      "lot_size": 5000,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "ASIANPAINT",
+      "yf": "ASIANPAINT.NS",
+      "name": "Asian Paints Ltd.",
+      "lot_size": 250,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "ASTRAL",
+      "yf": "ASTRAL.NS",
+      "name": "ASTRAL LIMITED",
+      "lot_size": 425,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "AUBANK",
+      "yf": "AUBANK.NS",
+      "name": "AU Small Finance Bank Limited",
+      "lot_size": 1000,
+      "sector": "financials"
+    },
+    {
+      "ticker": "AUROPHARMA",
+      "yf": "AUROPHARMA.NS",
+      "name": "Aurobindo Pharma Ltd.",
+      "lot_size": 550,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "AXISBANK",
+      "yf": "AXISBANK.NS",
+      "name": "AXIS Bank Ltd.",
+      "lot_size": 625,
+      "sector": "financials"
+    },
+    {
+      "ticker": "BAJAJ-AUTO",
+      "yf": "BAJAJ-AUTO.NS",
+      "name": "Bajaj Auto Limited",
+      "lot_size": 75,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "BAJAJFINSV",
+      "yf": "BAJAJFINSV.NS",
+      "name": "Bajaj Finserv Limited",
+      "lot_size": 250,
+      "sector": "financials"
+    },
+    {
+      "ticker": "BAJAJHLDNG",
+      "yf": "BAJAJHLDNG.NS",
+      "name": "Bajaj Holdings & Investment Limited",
+      "lot_size": 50,
+      "sector": "financials"
+    },
+    {
+      "ticker": "BAJFINANCE",
+      "yf": "BAJFINANCE.NS",
+      "name": "Bajaj Finance Limited",
+      "lot_size": 750,
+      "sector": "financials"
+    },
+    {
+      "ticker": "BANDHANBNK",
+      "yf": "BANDHANBNK.NS",
+      "name": "Bandhan Bank Limited",
+      "lot_size": 3600,
+      "sector": "financials"
+    },
+    {
+      "ticker": "BANKBARODA",
+      "yf": "BANKBARODA.NS",
+      "name": "Bank Of Baroda",
+      "lot_size": 2925,
+      "sector": "financials"
+    },
+    {
+      "ticker": "BANKINDIA",
+      "yf": "BANKINDIA.NS",
+      "name": "Bank of India",
+      "lot_size": 5200,
+      "sector": "financials"
+    },
+    {
+      "ticker": "BDL",
+      "yf": "BDL.NS",
+      "name": "Bharat Dynamics Limited",
+      "lot_size": 350,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "BEL",
+      "yf": "BEL.NS",
+      "name": "Bharat Electronics Ltd.",
+      "lot_size": 1425,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "BHARATFORG",
+      "yf": "BHARATFORG.NS",
+      "name": "Bharat Forge Ltd",
+      "lot_size": 500,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "BHARTIARTL",
+      "yf": "BHARTIARTL.NS",
+      "name": "Bharti Airtel Ltd.",
+      "lot_size": 475,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "BHEL",
+      "yf": "BHEL.NS",
+      "name": "Bharat Heavy Electricals Ltd.",
+      "lot_size": 2625,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "BIOCON",
+      "yf": "BIOCON.NS",
+      "name": "Biocon Ltd.",
+      "lot_size": 2500,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "BLUESTARCO",
+      "yf": "BLUESTARCO.NS",
+      "name": "Blue Star Ltd",
+      "lot_size": 325,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "BOSCHLTD",
+      "yf": "BOSCHLTD.NS",
+      "name": "Bosch Ltd",
+      "lot_size": 25,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "BPCL",
+      "yf": "BPCL.NS",
+      "name": "Bharat Petroleum Corpn. Ltd.",
+      "lot_size": 1975,
+      "sector": "energy"
+    },
+    {
+      "ticker": "BRITANNIA",
+      "yf": "BRITANNIA.NS",
+      "name": "Britannia Industries Ltd.",
+      "lot_size": 125,
+      "sector": "consumer_staples"
+    },
+    {
+      "ticker": "BSE",
+      "yf": "BSE.NS",
+      "name": "BSE Ltd.",
+      "lot_size": 375,
+      "sector": "financials"
+    },
+    {
+      "ticker": "CAMS",
+      "yf": "CAMS.NS",
+      "name": "Computer Age Management Services Limited",
+      "lot_size": 750,
+      "sector": "financials"
+    },
+    {
+      "ticker": "CANBK",
+      "yf": "CANBK.NS",
+      "name": "Canara Bank",
+      "lot_size": 6750,
+      "sector": "financials"
+    },
+    {
+      "ticker": "CDSL",
+      "yf": "CDSL.NS",
+      "name": "Central Depository Services (India) Ltd.",
+      "lot_size": 475,
+      "sector": "financials"
+    },
+    {
+      "ticker": "CGPOWER",
+      "yf": "CGPOWER.NS",
+      "name": "CG Power and Industrial Solutions Limited",
+      "lot_size": 850,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "CHOLAFIN",
+      "yf": "CHOLAFIN.NS",
+      "name": "Cholamandalam Investment and Finance Company Ltd",
+      "lot_size": 625,
+      "sector": "financials"
+    },
+    {
+      "ticker": "CIPLA",
+      "yf": "CIPLA.NS",
+      "name": "Cipla Ltd.",
+      "lot_size": 375,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "COALINDIA",
+      "yf": "COALINDIA.NS",
+      "name": "Coal India Limited",
+      "lot_size": 1350,
+      "sector": "energy"
+    },
+    {
+      "ticker": "COFORGE",
+      "yf": "COFORGE.NS",
+      "name": "COFORGE LIMITED",
+      "lot_size": 375,
+      "sector": "it"
+    },
+    {
+      "ticker": "COLPAL",
+      "yf": "COLPAL.NS",
+      "name": "Colgate-Palmolive (India) Ltd.",
+      "lot_size": 225,
+      "sector": "consumer_staples"
+    },
+    {
+      "ticker": "CONCOR",
+      "yf": "CONCOR.NS",
+      "name": "Container Corporation Of India Ltd.",
+      "lot_size": 1250,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "CROMPTON",
+      "yf": "CROMPTON.NS",
+      "name": "Crompton Greaves Consumer Electricals Limited",
+      "lot_size": 1800,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "CUMMINSIND",
+      "yf": "CUMMINSIND.NS",
+      "name": "Cummins India Ltd.",
+      "lot_size": 200,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "DABUR",
+      "yf": "DABUR.NS",
+      "name": "Dabur India Ltd.",
+      "lot_size": 1250,
+      "sector": "consumer_staples"
+    },
+    {
+      "ticker": "DALBHARAT",
+      "yf": "DALBHARAT.NS",
+      "name": "DALMIA BHARAT LIMITED",
+      "lot_size": 325,
+      "sector": "materials"
+    },
+    {
+      "ticker": "DELHIVERY",
+      "yf": "DELHIVERY.NS",
+      "name": "Delhivery Limited",
+      "lot_size": 2075,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "DIVISLAB",
+      "yf": "DIVISLAB.NS",
+      "name": "Divi's Laboratories Ltd.",
+      "lot_size": 100,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "DIXON",
+      "yf": "DIXON.NS",
+      "name": "Dixon Technologies (India) Limited",
+      "lot_size": 50,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "DLF",
+      "yf": "DLF.NS",
+      "name": "DLF LIMITED",
+      "lot_size": 825,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "DMART",
+      "yf": "DMART.NS",
+      "name": "Avenue Supermarts Limited",
+      "lot_size": 150,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "DRREDDY",
+      "yf": "DRREDDY.NS",
+      "name": "Dr. Reddy's Laboratories Ltd.",
+      "lot_size": 625,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "EICHERMOT",
+      "yf": "EICHERMOT.NS",
+      "name": "Eicher Motors Ltd.",
+      "lot_size": 100,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "ETERNAL",
+      "yf": "ETERNAL.NS",
+      "name": "Zomato Limited",
+      "lot_size": 2425,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "EXIDEIND",
+      "yf": "EXIDEIND.NS",
+      "name": "Exide Industries Ltd.",
+      "lot_size": 1800,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "FEDERALBNK",
+      "yf": "FEDERALBNK.NS",
+      "name": "Federal Bank Ltd.",
+      "lot_size": 5000,
+      "sector": "financials"
+    },
+    {
+      "ticker": "FORTIS",
+      "yf": "FORTIS.NS",
+      "name": "Fortis Healthcare Ltd",
+      "lot_size": 775,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "GAIL",
+      "yf": "GAIL.NS",
+      "name": "Gail (India) Ltd.",
+      "lot_size": 3150,
+      "sector": "energy"
+    },
+    {
+      "ticker": "GLENMARK",
+      "yf": "GLENMARK.NS",
+      "name": "Glenmark Pharmaceuticals ltd",
+      "lot_size": 375,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "GMRAIRPORT",
+      "yf": "GMRAIRPORT.NS",
+      "name": "GMR AIRPORTS INFRASTRUCTURE LIMITED",
+      "lot_size": 6975,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "GODREJCP",
+      "yf": "GODREJCP.NS",
+      "name": "Godrej Consumer Products Ltd.",
+      "lot_size": 500,
+      "sector": "consumer_staples"
+    },
+    {
+      "ticker": "GODREJPROP",
+      "yf": "GODREJPROP.NS",
+      "name": "Godrej Properties Limited",
+      "lot_size": 275,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "GRASIM",
+      "yf": "GRASIM.NS",
+      "name": "Grasim Industries Ltd",
+      "lot_size": 250,
+      "sector": "materials"
+    },
+    {
+      "ticker": "HAL",
+      "yf": "HAL.NS",
+      "name": "Hindustan Aeronautics Limited",
+      "lot_size": 150,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "HAVELLS",
+      "yf": "HAVELLS.NS",
+      "name": "Havells India Limited",
+      "lot_size": 500,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "HCLTECH",
+      "yf": "HCLTECH.NS",
+      "name": "HCL Technologies Ltd",
+      "lot_size": 350,
+      "sector": "it"
+    },
+    {
+      "ticker": "HDFCAMC",
+      "yf": "HDFCAMC.NS",
+      "name": "HDFC Asset Management Company Limited",
+      "lot_size": 300,
+      "sector": "financials"
+    },
+    {
+      "ticker": "HDFCBANK",
+      "yf": "HDFCBANK.NS",
+      "name": "HDFC Bank Ltd.",
+      "lot_size": 550,
+      "sector": "financials"
+    },
+    {
+      "ticker": "HDFCLIFE",
+      "yf": "HDFCLIFE.NS",
+      "name": "HDFC LIFE INSURANCE COMPANY LIMITED",
+      "lot_size": 1100,
+      "sector": "financials"
+    },
+    {
+      "ticker": "HEROMOTOCO",
+      "yf": "HEROMOTOCO.NS",
+      "name": "Hero MotoCorp Limited",
+      "lot_size": 150,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "HINDALCO",
+      "yf": "HINDALCO.NS",
+      "name": "Hindalco Industries Ltd.",
+      "lot_size": 700,
+      "sector": "materials"
+    },
+    {
+      "ticker": "HINDPETRO",
+      "yf": "HINDPETRO.NS",
+      "name": "Hindustan Petroleum Corporation Ltd",
+      "lot_size": 2025,
+      "sector": "energy"
+    },
+    {
+      "ticker": "HINDUNILVR",
+      "yf": "HINDUNILVR.NS",
+      "name": "Hindustan Unilever Ltd.",
+      "lot_size": 300,
+      "sector": "consumer_staples"
+    },
+    {
+      "ticker": "HINDZINC",
+      "yf": "HINDZINC.NS",
+      "name": "Hindustan Zinc Ltd.",
+      "lot_size": 1225,
+      "sector": "materials"
+    },
+    {
+      "ticker": "HUDCO",
+      "yf": "HUDCO.NS",
+      "name": "Housing &Urban Development Corporation Ltd.",
+      "lot_size": 4500,
+      "sector": "financials"
+    },
+    {
+      "ticker": "ICICIBANK",
+      "yf": "ICICIBANK.NS",
+      "name": "ICICI Bank Ltd.",
+      "lot_size": 700,
+      "sector": "financials"
+    },
+    {
+      "ticker": "ICICIGI",
+      "yf": "ICICIGI.NS",
+      "name": "ICICI Lombard General Insurance Company Limited",
+      "lot_size": 325,
+      "sector": "financials"
+    },
+    {
+      "ticker": "ICICIPRULI",
+      "yf": "ICICIPRULI.NS",
+      "name": "ICICI Prudential Life Insurance Company Limited",
+      "lot_size": 925,
+      "sector": "financials"
+    },
+    {
+      "ticker": "IDEA",
+      "yf": "IDEA.NS",
+      "name": "VODAFONE IDEA LIMITED",
+      "lot_size": 71475,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "IDFCFIRSTB",
+      "yf": "IDFCFIRSTB.NS",
+      "name": "IDFC FIRST BANK LIMITED",
+      "lot_size": 9275,
+      "sector": "financials"
+    },
+    {
+      "ticker": "IEX",
+      "yf": "IEX.NS",
+      "name": "Indian Energy Exchange Limited",
+      "lot_size": 3750,
+      "sector": "energy"
+    },
+    {
+      "ticker": "INDHOTEL",
+      "yf": "INDHOTEL.NS",
+      "name": "Indian Hotels Co. Ltd",
+      "lot_size": 1000,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "INDIANB",
+      "yf": "INDIANB.NS",
+      "name": "Indian Bank",
+      "lot_size": 1000,
+      "sector": "financials"
+    },
+    {
+      "ticker": "INDIGO",
+      "yf": "INDIGO.NS",
+      "name": "InterGlobe Aviation Limited",
+      "lot_size": 150,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "INDUSINDBK",
+      "yf": "INDUSINDBK.NS",
+      "name": "IndusInd Bank Ltd.",
+      "lot_size": 700,
+      "sector": "financials"
+    },
+    {
+      "ticker": "INDUSTOWER",
+      "yf": "INDUSTOWER.NS",
+      "name": "INDUS TOWERS LIMITED",
+      "lot_size": 1700,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "INFY",
+      "yf": "INFY.NS",
+      "name": "Infosys Ltd",
+      "lot_size": 400,
+      "sector": "it"
+    },
+    {
+      "ticker": "INOXWIND",
+      "yf": "INOXWIND.NS",
+      "name": "Inox Wind Limited",
+      "lot_size": 3575,
+      "sector": "energy"
+    },
+    {
+      "ticker": "IOC",
+      "yf": "IOC.NS",
+      "name": "Indian Oil Corporation Ltd.",
+      "lot_size": 4875,
+      "sector": "energy"
+    },
+    {
+      "ticker": "IREDA",
+      "yf": "IREDA.NS",
+      "name": "Indian Renewable Energy Development Agency Limited",
+      "lot_size": 3450,
+      "sector": "financials"
+    },
+    {
+      "ticker": "IRFC",
+      "yf": "IRFC.NS",
+      "name": "Indian Railway Finance Corporation",
+      "lot_size": 4250,
+      "sector": "financials"
+    },
+    {
+      "ticker": "ITC",
+      "yf": "ITC.NS",
+      "name": "ITC Ltd",
+      "lot_size": 1600,
+      "sector": "consumer_staples"
+    },
+    {
+      "ticker": "JINDALSTEL",
+      "yf": "JINDALSTEL.NS",
+      "name": "Jindal Steel & Power Ltd",
+      "lot_size": 625,
+      "sector": "materials"
+    },
+    {
+      "ticker": "JIOFIN",
+      "yf": "JIOFIN.NS",
+      "name": "Jio Financial Services Limited",
+      "lot_size": 2350,
+      "sector": "financials"
+    },
+    {
+      "ticker": "JSWENERGY",
+      "yf": "JSWENERGY.NS",
+      "name": "JSW Energy Limited",
+      "lot_size": 1000,
+      "sector": "energy"
+    },
+    {
+      "ticker": "JSWSTEEL",
+      "yf": "JSWSTEEL.NS",
+      "name": "JSW Steel Limited",
+      "lot_size": 675,
+      "sector": "materials"
+    },
+    {
+      "ticker": "JUBLFOOD",
+      "yf": "JUBLFOOD.NS",
+      "name": "Jubilant Foodworks Limited",
+      "lot_size": 1250,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "KALYANKJIL",
+      "yf": "KALYANKJIL.NS",
+      "name": "Kalyan Jewellers India Limited",
+      "lot_size": 1175,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "KAYNES",
+      "yf": "KAYNES.NS",
+      "name": "KAYNES TECHNOLOGY INDIA LIMITED",
+      "lot_size": 100,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "KEI",
+      "yf": "KEI.NS",
+      "name": "KEI Industries Ltd.",
+      "lot_size": 175,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "KFINTECH",
+      "yf": "KFINTECH.NS",
+      "name": "KFin Technologies Limited",
+      "lot_size": 500,
+      "sector": "financials"
+    },
+    {
+      "ticker": "KOTAKBANK",
+      "yf": "KOTAKBANK.NS",
+      "name": "Kotak Mahindra Bank Ltd.",
+      "lot_size": 2000,
+      "sector": "financials"
+    },
+    {
+      "ticker": "KPITTECH",
+      "yf": "KPITTECH.NS",
+      "name": "KPIT Technologies Ltd",
+      "lot_size": 425,
+      "sector": "it"
+    },
+    {
+      "ticker": "LAURUSLABS",
+      "yf": "LAURUSLABS.NS",
+      "name": "Laurus Labs Limited",
+      "lot_size": 850,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "LICHSGFIN",
+      "yf": "LICHSGFIN.NS",
+      "name": "Lic Housing Finance Ltd.",
+      "lot_size": 1000,
+      "sector": "financials"
+    },
+    {
+      "ticker": "LICI",
+      "yf": "LICI.NS",
+      "name": "LIFE INSURANCE CORPORATION OF INDIA",
+      "lot_size": 700,
+      "sector": "financials"
+    },
+    {
+      "ticker": "LODHA",
+      "yf": "LODHA.NS",
+      "name": "Macrotech Developers Limited",
+      "lot_size": 450,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "LT",
+      "yf": "LT.NS",
+      "name": "Larsen & Toubro Limited",
+      "lot_size": 175,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "LTF",
+      "yf": "LTF.NS",
+      "name": "L&T Finance Limited",
+      "lot_size": 2250,
+      "sector": "financials"
+    },
+    {
+      "ticker": "LUPIN",
+      "yf": "LUPIN.NS",
+      "name": "Lupin Ltd",
+      "lot_size": 425,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "M&M",
+      "yf": "M&M.NS",
+      "name": "Mahindra & Mahindra Ltd.",
+      "lot_size": 200,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "MANAPPURAM",
+      "yf": "MANAPPURAM.NS",
+      "name": "Manappuram Finance Limited",
+      "lot_size": 3000,
+      "sector": "financials"
+    },
+    {
+      "ticker": "MANKIND",
+      "yf": "MANKIND.NS",
+      "name": "Mankind Pharma Limited",
+      "lot_size": 225,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "MARICO",
+      "yf": "MARICO.NS",
+      "name": "Marico Limited",
+      "lot_size": 1200,
+      "sector": "consumer_staples"
+    },
+    {
+      "ticker": "MARUTI",
+      "yf": "MARUTI.NS",
+      "name": "Maruti Suzuki India Ltd.",
+      "lot_size": 50,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "MAXHEALTH",
+      "yf": "MAXHEALTH.NS",
+      "name": "Max Healthcare Institute Limited",
+      "lot_size": 525,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "MAZDOCK",
+      "yf": "MAZDOCK.NS",
+      "name": "Mazagon Dock Shipbuilders Limited",
+      "lot_size": 200,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "MCX",
+      "yf": "MCX.NS",
+      "name": "Multi Commodity Exchange of India Ltd",
+      "lot_size": 625,
+      "sector": "financials"
+    },
+    {
+      "ticker": "MFSL",
+      "yf": "MFSL.NS",
+      "name": "Max Financial Services Limited",
+      "lot_size": 400,
+      "sector": "financials"
+    },
+    {
+      "ticker": "MOTHERSON",
+      "yf": "MOTHERSON.NS",
+      "name": "Samvardhana Motherson International Limited",
+      "lot_size": 6150,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "MPHASIS",
+      "yf": "MPHASIS.NS",
+      "name": "Mphasis Limited",
+      "lot_size": 275,
+      "sector": "it"
+    },
+    {
+      "ticker": "MUTHOOTFIN",
+      "yf": "MUTHOOTFIN.NS",
+      "name": "MUTHOOT FINANCE LIMITED",
+      "lot_size": 275,
+      "sector": "financials"
+    },
+    {
+      "ticker": "NATIONALUM",
+      "yf": "NATIONALUM.NS",
+      "name": "National Aluminium Co. Ltd.",
+      "lot_size": 3750,
+      "sector": "materials"
+    },
+    {
+      "ticker": "NAUKRI",
+      "yf": "NAUKRI.NS",
+      "name": "Info Edge(India) Ltd.",
+      "lot_size": 375,
+      "sector": "it"
+    },
+    {
+      "ticker": "NBCC",
+      "yf": "NBCC.NS",
+      "name": "NBCC (India) Limited",
+      "lot_size": 6500,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "NESTLEIND",
+      "yf": "NESTLEIND.NS",
+      "name": "Nestle India Ltd.",
+      "lot_size": 500,
+      "sector": "consumer_staples"
+    },
+    {
+      "ticker": "NHPC",
+      "yf": "NHPC.NS",
+      "name": "NHPC Limited",
+      "lot_size": 6400,
+      "sector": "energy"
+    },
+    {
+      "ticker": "NMDC",
+      "yf": "NMDC.NS",
+      "name": "NMDC Ltd",
+      "lot_size": 6750,
+      "sector": "materials"
+    },
+    {
+      "ticker": "NTPC",
+      "yf": "NTPC.NS",
+      "name": "NTPC Limited",
+      "lot_size": 1500,
+      "sector": "energy"
+    },
+    {
+      "ticker": "NUVAMA",
+      "yf": "NUVAMA.NS",
+      "name": "Nuvama Wealth Management Limited",
+      "lot_size": 500,
+      "sector": "financials"
+    },
+    {
+      "ticker": "NYKAA",
+      "yf": "NYKAA.NS",
+      "name": "FSN E-Commerce Ventures Limited",
+      "lot_size": 3125,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "OBEROIRLTY",
+      "yf": "OBEROIRLTY.NS",
+      "name": "OBEROI REALTY LIMITED",
+      "lot_size": 350,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "OFSS",
+      "yf": "OFSS.NS",
+      "name": "Oracle Financial Services Software Limited",
+      "lot_size": 75,
+      "sector": "it"
+    },
+    {
+      "ticker": "OIL",
+      "yf": "OIL.NS",
+      "name": "Oil India Limited",
+      "lot_size": 1400,
+      "sector": "energy"
+    },
+    {
+      "ticker": "ONGC",
+      "yf": "ONGC.NS",
+      "name": "Oil And Natural Gas Corporation Ltd",
+      "lot_size": 2250,
+      "sector": "energy"
+    },
+    {
+      "ticker": "PAGEIND",
+      "yf": "PAGEIND.NS",
+      "name": "Page Industries Ltd.",
+      "lot_size": 15,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "PATANJALI",
+      "yf": "PATANJALI.NS",
+      "name": "Patanjali Foods Limited",
+      "lot_size": 900,
+      "sector": "consumer_staples"
+    },
+    {
+      "ticker": "PAYTM",
+      "yf": "PAYTM.NS",
+      "name": "One 97 Communications Limited",
+      "lot_size": 725,
+      "sector": "financials"
+    },
+    {
+      "ticker": "PERSISTENT",
+      "yf": "PERSISTENT.NS",
+      "name": "Persistent Systems Limited",
+      "lot_size": 100,
+      "sector": "it"
+    },
+    {
+      "ticker": "PETRONET",
+      "yf": "PETRONET.NS",
+      "name": "PETRONET LNG LTD.",
+      "lot_size": 1900,
+      "sector": "energy"
+    },
+    {
+      "ticker": "PFC",
+      "yf": "PFC.NS",
+      "name": "Power Finance Corporation Ltd",
+      "lot_size": 1300,
+      "sector": "financials"
+    },
+    {
+      "ticker": "PGEL",
+      "yf": "PGEL.NS",
+      "name": "PG Electroplast Limited",
+      "lot_size": 950,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "PHOENIXLTD",
+      "yf": "PHOENIXLTD.NS",
+      "name": "The Phoenix Mills Ltd.",
+      "lot_size": 350,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "PIDILITIND",
+      "yf": "PIDILITIND.NS",
+      "name": "Pidilite Industries Ltd.",
+      "lot_size": 500,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "PIIND",
+      "yf": "PIIND.NS",
+      "name": "PI Industries Limited",
+      "lot_size": 175,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "PNB",
+      "yf": "PNB.NS",
+      "name": "Punjab National Bank",
+      "lot_size": 8000,
+      "sector": "financials"
+    },
+    {
+      "ticker": "PNBHOUSING",
+      "yf": "PNBHOUSING.NS",
+      "name": "PNB Housing Finance Limited",
+      "lot_size": 650,
+      "sector": "financials"
+    },
+    {
+      "ticker": "POLICYBZR",
+      "yf": "POLICYBZR.NS",
+      "name": "PB Fintech Limited",
+      "lot_size": 350,
+      "sector": "financials"
+    },
+    {
+      "ticker": "POLYCAB",
+      "yf": "POLYCAB.NS",
+      "name": "Polycab India Limited",
+      "lot_size": 125,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "POWERGRID",
+      "yf": "POWERGRID.NS",
+      "name": "POWER GRID CORPORATION OF INDIA LIMITED",
+      "lot_size": 1900,
+      "sector": "energy"
+    },
+    {
+      "ticker": "POWERINDIA",
+      "yf": "POWERINDIA.NS",
+      "name": "HITACHI ENERGY INDIA LIMITED",
+      "lot_size": 50,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "PPLPHARMA",
+      "yf": "PPLPHARMA.NS",
+      "name": "PIRAMAL PHARMA LIMITED",
+      "lot_size": 4500,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "PREMIERENE",
+      "yf": "PREMIERENE.NS",
+      "name": "Premier Energies Ltd",
+      "lot_size": 575,
+      "sector": "energy"
+    },
+    {
+      "ticker": "PRESTIGE",
+      "yf": "PRESTIGE.NS",
+      "name": "Prestige Estates Projects Limited",
+      "lot_size": 450,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "RBLBANK",
+      "yf": "RBLBANK.NS",
+      "name": "RBL Bank Limited",
+      "lot_size": 3175,
+      "sector": "financials"
+    },
+    {
+      "ticker": "RECLTD",
+      "yf": "RECLTD.NS",
+      "name": "REC LIMITED",
+      "lot_size": 1400,
+      "sector": "financials"
+    },
+    {
+      "ticker": "RELIANCE",
+      "yf": "RELIANCE.NS",
+      "name": "Reliance Industries Ltd",
+      "lot_size": 500,
+      "sector": "energy"
+    },
+    {
+      "ticker": "RVNL",
+      "yf": "RVNL.NS",
+      "name": "Rail Vikas Nigam Limited",
+      "lot_size": 1525,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "SAIL",
+      "yf": "SAIL.NS",
+      "name": "Steel Authority of India Ltd.",
+      "lot_size": 4700,
+      "sector": "materials"
+    },
+    {
+      "ticker": "SAMMAANCAP",
+      "yf": "SAMMAANCAP.NS",
+      "name": "Sammaan Capital Limited",
+      "lot_size": 4300,
+      "sector": "financials"
+    },
+    {
+      "ticker": "SBICARD",
+      "yf": "SBICARD.NS",
+      "name": "SBI CARDS AND PAYMENT SERVICES LIMITED",
+      "lot_size": 800,
+      "sector": "financials"
+    },
+    {
+      "ticker": "SBILIFE",
+      "yf": "SBILIFE.NS",
+      "name": "SBI Life Insurance Company Limited",
+      "lot_size": 375,
+      "sector": "financials"
+    },
+    {
+      "ticker": "SBIN",
+      "yf": "SBIN.NS",
+      "name": "State Bank Of India",
+      "lot_size": 750,
+      "sector": "financials"
+    },
+    {
+      "ticker": "SHREECEM",
+      "yf": "SHREECEM.NS",
+      "name": "Shree Cements Ltd.",
+      "lot_size": 25,
+      "sector": "materials"
+    },
+    {
+      "ticker": "SHRIRAMFIN",
+      "yf": "SHRIRAMFIN.NS",
+      "name": "Shriram Finance Limited",
+      "lot_size": 825,
+      "sector": "financials"
+    },
+    {
+      "ticker": "SIEMENS",
+      "yf": "SIEMENS.NS",
+      "name": "Siemens Ltd.",
+      "lot_size": 175,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "SOLARINDS",
+      "yf": "SOLARINDS.NS",
+      "name": "Solar Industries India Limited",
+      "lot_size": 50,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "SONACOMS",
+      "yf": "SONACOMS.NS",
+      "name": "Sona BLW Precision Forgings Limited",
+      "lot_size": 1225,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "SRF",
+      "yf": "SRF.NS",
+      "name": "SRF Ltd.",
+      "lot_size": 200,
+      "sector": "materials"
+    },
+    {
+      "ticker": "SUNPHARMA",
+      "yf": "SUNPHARMA.NS",
+      "name": "Sun Pharmaceutical Industries Ltd.",
+      "lot_size": 350,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "SUPREMEIND",
+      "yf": "SUPREMEIND.NS",
+      "name": "Supreme Industries Ltd.",
+      "lot_size": 175,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "SUZLON",
+      "yf": "SUZLON.NS",
+      "name": "SUZLON ENERGY LTD.",
+      "lot_size": 9025,
+      "sector": "energy"
+    },
+    {
+      "ticker": "SWIGGY",
+      "yf": "SWIGGY.NS",
+      "name": "Swiggy Ltd",
+      "lot_size": 1300,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "SYNGENE",
+      "yf": "SYNGENE.NS",
+      "name": "Syngene International Limited",
+      "lot_size": 1250,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "TATACONSUM",
+      "yf": "TATACONSUM.NS",
+      "name": "TATA CONSUMER PRODUCTS LIMITED",
+      "lot_size": 550,
+      "sector": "consumer_staples"
+    },
+    {
+      "ticker": "TATAELXSI",
+      "yf": "TATAELXSI.NS",
+      "name": "Tata Elxsi Ltd",
+      "lot_size": 100,
+      "sector": "it"
+    },
+    {
+      "ticker": "TATAPOWER",
+      "yf": "TATAPOWER.NS",
+      "name": "Tata Power Co. Ltd",
+      "lot_size": 1450,
+      "sector": "energy"
+    },
+    {
+      "ticker": "TATASTEEL",
+      "yf": "TATASTEEL.NS",
+      "name": "TATA STEEL LIMITED",
+      "lot_size": 5500,
+      "sector": "materials"
+    },
+    {
+      "ticker": "TATATECH",
+      "yf": "TATATECH.NS",
+      "name": "Tata Technologies Limited",
+      "lot_size": 675,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "TCS",
+      "yf": "TCS.NS",
+      "name": "Tata Consultancy Services Ltd.",
+      "lot_size": 175,
+      "sector": "it"
+    },
+    {
+      "ticker": "TECHM",
+      "yf": "TECHM.NS",
+      "name": "Tech Mahindra Limited",
+      "lot_size": 600,
+      "sector": "it"
+    },
+    {
+      "ticker": "TIINDIA",
+      "yf": "TIINDIA.NS",
+      "name": "Tube Investments of India Ltd",
+      "lot_size": 200,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "TITAN",
+      "yf": "TITAN.NS",
+      "name": "Titan Company Limited",
+      "lot_size": 175,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "TORNTPHARM",
+      "yf": "TORNTPHARM.NS",
+      "name": "Torrent Pharmaceuticals Ltd.",
+      "lot_size": 250,
+      "sector": "healthcare"
+    },
+    {
+      "ticker": "TORNTPOWER",
+      "yf": "TORNTPOWER.NS",
+      "name": "TORRENT POWER LIMITED",
+      "lot_size": 550,
+      "sector": "energy"
+    },
+    {
+      "ticker": "TRENT",
+      "yf": "TRENT.NS",
+      "name": "Trent Ltd [Lakme Ltd]",
+      "lot_size": 100,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "TVSMOTOR",
+      "yf": "TVSMOTOR.NS",
+      "name": "TVS Motor Company Ltd.",
+      "lot_size": 175,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "ULTRACEMCO",
+      "yf": "ULTRACEMCO.NS",
+      "name": "UltraTech Cement Ltd",
+      "lot_size": 50,
+      "sector": "materials"
+    },
+    {
+      "ticker": "UNIONBANK",
+      "yf": "UNIONBANK.NS",
+      "name": "Union Bank of India",
+      "lot_size": 4425,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "UNITDSPR",
+      "yf": "UNITDSPR.NS",
+      "name": "United Spirits Limited",
+      "lot_size": 400,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "UNOMINDA",
+      "yf": "UNOMINDA.NS",
+      "name": "UNO Minda Limited",
+      "lot_size": 550,
+      "sector": "industrials"
+    },
+    {
+      "ticker": "UPL",
+      "yf": "UPL.NS",
+      "name": "UPL Limited",
+      "lot_size": 1355,
+      "sector": "materials"
+    },
+    {
+      "ticker": "VBL",
+      "yf": "VBL.NS",
+      "name": "Varun Beverages Limited",
+      "lot_size": 1125,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "VEDL",
+      "yf": "VEDL.NS",
+      "name": "Vedanta Limited",
+      "lot_size": 1150,
+      "sector": "materials"
+    },
+    {
+      "ticker": "VOLTAS",
+      "yf": "VOLTAS.NS",
+      "name": "Voltas Ltd.",
+      "lot_size": 375,
+      "sector": "consumer_discretionary"
+    },
+    {
+      "ticker": "WAAREEENER",
+      "yf": "WAAREEENER.NS",
+      "name": "Waaree Energies Ltd",
+      "lot_size": 175,
+      "sector": "energy"
+    },
+    {
+      "ticker": "WIPRO",
+      "yf": "WIPRO.NS",
+      "name": "Wipro Ltd.",
+      "lot_size": 3000,
+      "sector": "it"
+    },
+    {
+      "ticker": "YESBANK",
+      "yf": "YESBANK.NS",
+      "name": "Yes Bank Ltd.",
+      "lot_size": 31100,
+      "sector": "financials"
+    },
+    {
+      "ticker": "ZYDUSLIFE",
+      "yf": "ZYDUSLIFE.NS",
+      "name": "Zydus Lifesciences Limited",
+      "lot_size": 900,
+      "sector": "healthcare"
+    }
+  ],
+  "sectors": {
+    "financials": {
+      "label": "Financials",
+      "color": "#F59E0B",
+      "count": 53
+    },
+    "it": {
+      "label": "Information Technology",
+      "color": "#06B6D4",
+      "count": 12
+    },
+    "energy": {
+      "label": "Energy",
+      "color": "#EF4444",
+      "count": 22
+    },
+    "materials": {
+      "label": "Materials",
+      "color": "#8B5CF6",
+      "count": 16
+    },
+    "healthcare": {
+      "label": "Healthcare",
+      "color": "#10B981",
+      "count": 18
+    },
+    "consumer_discretionary": {
+      "label": "Consumer Discretionary",
+      "color": "#EC4899",
+      "count": 26
+    },
+    "consumer_staples": {
+      "label": "Consumer Staples",
+      "color": "#F97316",
+      "count": 10
+    },
+    "industrials": {
+      "label": "Industrials",
+      "color": "#6366F1",
+      "count": 47
+    }
+  },
+  "strategies": [
+    {
+      "id": "trend_sma",
+      "label": "Trend (SMA)",
+      "description": "Buy when price crosses above SMA, sell when below.",
+      "params": [
+        {
+          "name": "period",
+          "default": 50,
+          "min": 5,
+          "max": 500,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "trend_ema",
+      "label": "Trend (EMA)",
+      "description": "Buy when price crosses above EMA, sell when below.",
+      "params": [
+        {
+          "name": "period",
+          "default": 50,
+          "min": 5,
+          "max": 500,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "dual_ma",
+      "label": "Dual Moving Average",
+      "description": "Buy when fast MA crosses above slow MA (golden cross).",
+      "params": [
+        {
+          "name": "fast",
+          "default": 20,
+          "min": 5,
+          "max": 200,
+          "step": 1
+        },
+        {
+          "name": "slow",
+          "default": 50,
+          "min": 10,
+          "max": 500,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "mean_reversion_bb",
+      "label": "Mean Reversion (Bollinger)",
+      "description": "Buy at lower band, sell at upper band.",
+      "params": [
+        {
+          "name": "period",
+          "default": 20,
+          "min": 5,
+          "max": 200,
+          "step": 1
+        },
+        {
+          "name": "std_dev",
+          "default": 2.0,
+          "min": 0.5,
+          "max": 4.0,
+          "step": 0.1
+        }
+      ]
+    },
+    {
+      "id": "mean_reversion_rsi",
+      "label": "Mean Reversion (RSI)",
+      "description": "Buy when RSI is oversold, sell when overbought.",
+      "params": [
+        {
+          "name": "period",
+          "default": 14,
+          "min": 2,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "name": "oversold",
+          "default": 30,
+          "min": 5,
+          "max": 50,
+          "step": 1
+        },
+        {
+          "name": "overbought",
+          "default": 70,
+          "min": 50,
+          "max": 95,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "momentum",
+      "label": "Momentum",
+      "description": "Buy stocks with strongest N-day returns.",
+      "params": [
+        {
+          "name": "lookback",
+          "default": 60,
+          "min": 5,
+          "max": 252,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "breakout",
+      "label": "Breakout (Donchian)",
+      "description": "Buy on N-day high breakout, sell on N-day low.",
+      "params": [
+        {
+          "name": "entry_period",
+          "default": 20,
+          "min": 5,
+          "max": 200,
+          "step": 1
+        },
+        {
+          "name": "exit_period",
+          "default": 10,
+          "min": 5,
+          "max": 100,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "macd",
+      "label": "MACD",
+      "description": "Buy on MACD line crossing above signal line.",
+      "params": [
+        {
+          "name": "fast",
+          "default": 12,
+          "min": 2,
+          "max": 50,
+          "step": 1
+        },
+        {
+          "name": "slow",
+          "default": 26,
+          "min": 10,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "name": "signal",
+          "default": 9,
+          "min": 2,
+          "max": 50,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "volatility_breakout",
+      "label": "Volatility Breakout (ATR)",
+      "description": "Buy when price moves more than N*ATR from previous close.",
+      "params": [
+        {
+          "name": "atr_period",
+          "default": 14,
+          "min": 5,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "name": "multiplier",
+          "default": 1.5,
+          "min": 0.5,
+          "max": 5.0,
+          "step": 0.1
+        }
+      ]
+    },
+    {
+      "id": "buy_hold",
+      "label": "Buy & Hold",
+      "description": "Benchmark: buy on day one and hold.",
+      "params": []
+    }
+  ]
+}
