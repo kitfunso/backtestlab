@@ -541,15 +541,15 @@ export function StrategyBuilder({
         ))}
       </div>
 
-      {/* Block Pipeline — horizontal flow */}
-      <div className={cn('px-4 py-2.5 border-b', cardBorder)}>
+      {/* Block Pipeline — one block per row, compact */}
+      <div className={cn('px-4 py-2 border-b', cardBorder)}>
         <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="pipeline" direction="horizontal">
+          <Droppable droppableId="pipeline">
             {(provided) => (
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="flex flex-wrap items-start gap-1"
+                className="space-y-1"
               >
                 {blocks.map((block, index) => (
                   <Draggable
@@ -561,20 +561,17 @@ export function StrategyBuilder({
                       <div
                         ref={dragProvided.innerRef}
                         {...dragProvided.draggableProps}
-                        className="flex items-start gap-1"
                       >
-                        {/* Arrow connector */}
-                        {index > 0 && (
-                          <span className={cn('text-[10px] self-center select-none pt-0.5', textMuted)}>
-                            {blocks[index - 1]?.kind === 'action' && block.kind === 'indicator'
-                              ? <button
-                                  onClick={() => setCombineLogic((l) => l === 'and' ? 'or' : 'and')}
-                                  className="px-1 py-0.5 rounded text-[9px] font-bold bg-[#FF9933]/10 text-[#FF9933] hover:bg-[#FF9933]/20"
-                                >
-                                  {combineLogic === 'and' ? 'AND' : 'OR'}
-                                </button>
-                              : '→'}
-                          </span>
+                        {/* AND/OR between rule groups */}
+                        {blocks[index - 1]?.kind === 'action' && block.kind === 'indicator' && (
+                          <div className="flex justify-center py-0.5">
+                            <button
+                              onClick={() => setCombineLogic((l) => l === 'and' ? 'or' : 'and')}
+                              className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#FF9933]/10 text-[#FF9933] hover:bg-[#FF9933]/20"
+                            >
+                              {combineLogic === 'and' ? 'AND' : 'OR'}
+                            </button>
+                          </div>
                         )}
 
                         <BlockPill
@@ -606,44 +603,41 @@ export function StrategyBuilder({
                   </Draggable>
                 ))}
                 {provided.placeholder}
-
-                {/* Inline add buttons */}
-                <div className="flex items-center gap-1 self-center">
-                  <button
-                    onClick={() => setShowAddModal(true)}
-                    className={cn(
-                      'px-2 py-1 rounded border border-dashed text-[11px] font-medium transition-all',
-                      isLight
-                        ? 'border-gray-300 text-gray-400 hover:border-[#FF9933] hover:text-[#FF9933]'
-                        : 'border-zinc-700 text-zinc-500 hover:border-[#FF9933] hover:text-[#FF9933]',
-                    )}
-                  >
-                    + IND
-                  </button>
-                  {indicatorBlocks.length > 0 && (
-                    <button
-                      onClick={() => setShowAddRuleModal(true)}
-                      className={cn(
-                        'px-2 py-1 rounded border border-dashed text-[11px] font-medium transition-all',
-                        isLight
-                          ? 'border-orange-300 text-orange-400 hover:border-[#FF9933] hover:text-[#FF9933]'
-                          : 'border-orange-700/50 text-orange-500/60 hover:border-[#FF9933] hover:text-[#FF9933]',
-                      )}
-                    >
-                      + IF→DO
-                    </button>
-                  )}
-                </div>
               </div>
             )}
           </Droppable>
         </DragDropContext>
 
-        {blocks.length === 0 && (
-          <div className={cn('text-xs py-1', textMuted)}>
-            Select a preset or click + IND to start.
-          </div>
-        )}
+        {/* Add buttons — inline row */}
+        <div className="flex items-center gap-1.5 mt-1.5">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className={cn(
+              'px-2 py-1 rounded border border-dashed text-[11px] font-medium transition-all',
+              isLight
+                ? 'border-gray-300 text-gray-400 hover:border-[#FF9933] hover:text-[#FF9933]'
+                : 'border-zinc-700 text-zinc-500 hover:border-[#FF9933] hover:text-[#FF9933]',
+            )}
+          >
+            + IND
+          </button>
+          {indicatorBlocks.length > 0 && (
+            <button
+              onClick={() => setShowAddRuleModal(true)}
+              className={cn(
+                'px-2 py-1 rounded border border-dashed text-[11px] font-medium transition-all',
+                isLight
+                  ? 'border-orange-300 text-orange-400 hover:border-[#FF9933] hover:text-[#FF9933]'
+                  : 'border-orange-700/50 text-orange-500/60 hover:border-[#FF9933] hover:text-[#FF9933]',
+              )}
+            >
+              + IF→DO
+            </button>
+          )}
+          {blocks.length === 0 && (
+            <span className={cn('text-[11px]', textMuted)}>Select a preset or add indicators</span>
+          )}
+        </div>
 
         {/* Modals */}
         {showAddModal && (
