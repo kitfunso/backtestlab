@@ -541,176 +541,156 @@ export function StrategyBuilder({
         ))}
       </div>
 
-      {/* Split layout: Pipeline + Results */}
-      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr]">
-        {/* Left: Block Pipeline */}
-        <div className={cn('p-2.5 space-y-0 border-r', cardBorder)}>
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="pipeline">
-              {(provided) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className="space-y-0"
-                >
-                  {blocks.map((block, index) => (
-                    <Draggable
-                      key={block.id}
-                      draggableId={block.id}
-                      index={index}
-                    >
-                      {(dragProvided, snapshot) => (
-                        <div
-                          ref={dragProvided.innerRef}
-                          {...dragProvided.draggableProps}
-                          className="relative"
-                        >
-                          {/* Connector line between blocks */}
-                          {index > 0 && (
-                            <Connector
-                              isLight={isLight}
-                              showLogicToggle={
-                                indicatorCount >= 2 &&
-                                block.kind === 'indicator' &&
-                                index > 0 &&
-                                blocks[index - 1]?.kind === 'action'
-                              }
-                              combineLogic={combineLogic}
-                              onToggleLogic={() =>
-                                setCombineLogic((l) =>
-                                  l === 'and' ? 'or' : 'and',
-                                )
-                              }
-                            />
-                          )}
-
-                          <BlockPill
-                            block={block}
-                            blocks={blocks}
-                            isExpanded={expandedBlockId === block.id}
-                            isDragging={snapshot.isDragging}
-                            isLight={isLight}
-                            dragHandleProps={dragProvided.dragHandleProps}
-                            onToggleExpand={() =>
-                              setExpandedBlockId((prev) =>
-                                prev === block.id ? null : block.id,
-                              )
-                            }
-                            onRemove={() => removeBlock(block.id)}
-                            onDuplicate={block.kind === 'indicator' ? () => duplicateBlock(block.id) : undefined}
-                            onUpdateIndicatorParam={(key, val) =>
-                              updateIndicatorParam(block.id, key, val)
-                            }
-                            onUpdateTrigger={(updates) =>
-                              updateTrigger(block.id, updates)
-                            }
-                            onUpdateAction={(dir) =>
-                              updateAction(block.id, dir)
-                            }
-                          />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
-
-          {/* Add buttons */}
-          <div className="relative pt-2 space-y-1.5">
-            {blocks.length > 0 && (
-              <div className="flex justify-center mb-1">
-                <div
-                  className={cn(
-                    'w-[2px] h-2 border-l-2 border-dashed',
-                    isLight ? 'border-gray-300' : 'border-zinc-600',
-                  )}
-                />
-              </div>
-            )}
-            <button
-              onClick={() => setShowAddModal(true)}
-              className={cn(
-                'w-full py-2 rounded-lg border border-dashed text-xs font-medium transition-all',
-                isLight
-                  ? 'border-gray-300 text-gray-500 hover:border-[#FF9933] hover:text-[#FF9933]'
-                  : 'border-zinc-700 text-zinc-500 hover:border-[#FF9933] hover:text-[#FF9933]',
-              )}
-            >
-              + Add Indicator
-            </button>
-            {indicatorBlocks.length > 0 && (
-              <button
-                onClick={() => setShowAddRuleModal(true)}
-                className={cn(
-                  'w-full py-2 rounded-lg border border-dashed text-xs font-medium transition-all',
-                  isLight
-                    ? 'border-orange-300 text-orange-500 hover:border-[#FF9933] hover:text-[#FF9933]'
-                    : 'border-orange-700/50 text-orange-500/70 hover:border-[#FF9933] hover:text-[#FF9933]',
-                )}
+      {/* Block Pipeline — horizontal flow */}
+      <div className={cn('px-4 py-2.5 border-b', cardBorder)}>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="pipeline" direction="horizontal">
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="flex flex-wrap items-start gap-1"
               >
-                + Add Rule (IF → DO)
-              </button>
-            )}
-          </div>
+                {blocks.map((block, index) => (
+                  <Draggable
+                    key={block.id}
+                    draggableId={block.id}
+                    index={index}
+                  >
+                    {(dragProvided, snapshot) => (
+                      <div
+                        ref={dragProvided.innerRef}
+                        {...dragProvided.draggableProps}
+                        className="flex items-start gap-1"
+                      >
+                        {/* Arrow connector */}
+                        {index > 0 && (
+                          <span className={cn('text-[10px] self-center select-none pt-0.5', textMuted)}>
+                            {blocks[index - 1]?.kind === 'action' && block.kind === 'indicator'
+                              ? <button
+                                  onClick={() => setCombineLogic((l) => l === 'and' ? 'or' : 'and')}
+                                  className="px-1 py-0.5 rounded text-[9px] font-bold bg-[#FF9933]/10 text-[#FF9933] hover:bg-[#FF9933]/20"
+                                >
+                                  {combineLogic === 'and' ? 'AND' : 'OR'}
+                                </button>
+                              : '→'}
+                          </span>
+                        )}
 
-          {blocks.length === 0 && (
-            <div className={cn('text-center py-6 text-xs', textSecondary)}>
-              Select a preset or add indicators to build your strategy.
-            </div>
-          )}
+                        <BlockPill
+                          block={block}
+                          blocks={blocks}
+                          isExpanded={expandedBlockId === block.id}
+                          isDragging={snapshot.isDragging}
+                          isLight={isLight}
+                          dragHandleProps={dragProvided.dragHandleProps}
+                          onToggleExpand={() =>
+                            setExpandedBlockId((prev) =>
+                              prev === block.id ? null : block.id,
+                            )
+                          }
+                          onRemove={() => removeBlock(block.id)}
+                          onDuplicate={block.kind === 'indicator' ? () => duplicateBlock(block.id) : undefined}
+                          onUpdateIndicatorParam={(key, val) =>
+                            updateIndicatorParam(block.id, key, val)
+                          }
+                          onUpdateTrigger={(updates) =>
+                            updateTrigger(block.id, updates)
+                          }
+                          onUpdateAction={(dir) =>
+                            updateAction(block.id, dir)
+                          }
+                        />
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
 
-          {/* Add Block Modal */}
-          {showAddModal && (
-            <AddBlockModal
-              onSelect={addIndicator}
-              onClose={() => setShowAddModal(false)}
-              isLight={isLight}
-            />
-          )}
-
-          {/* Add Rule Modal */}
-          {showAddRuleModal && (
-            <AddRuleModal
-              indicatorBlocks={indicatorBlocks}
-              onAdd={addRule}
-              onClose={() => setShowAddRuleModal(false)}
-              isLight={isLight}
-            />
-          )}
-        </div>
-
-        {/* Right: Results */}
-        <div className="p-4">
-          {!stock && blocks.length > 0 && !result && !isLoading && (
-            <div className={cn('flex items-center justify-center h-full text-sm', textMuted)}>
-              Select a stock from the grid above to run the backtest.
-            </div>
-          )}
-          {!stock && blocks.length === 0 && (
-            <div className={cn('flex items-center justify-center h-full text-sm', textMuted)}>
-              Select a stock, then configure a strategy.
-            </div>
-          )}
-          {stock && !priceData && blocks.length > 0 && (
-            <div className={cn('flex items-center justify-center h-full text-sm', textSecondary)}>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-[#FF9933] border-t-transparent rounded-full animate-spin" />
-                Loading price data...
+                {/* Inline add buttons */}
+                <div className="flex items-center gap-1 self-center">
+                  <button
+                    onClick={() => setShowAddModal(true)}
+                    className={cn(
+                      'px-2 py-1 rounded border border-dashed text-[11px] font-medium transition-all',
+                      isLight
+                        ? 'border-gray-300 text-gray-400 hover:border-[#FF9933] hover:text-[#FF9933]'
+                        : 'border-zinc-700 text-zinc-500 hover:border-[#FF9933] hover:text-[#FF9933]',
+                    )}
+                  >
+                    + IND
+                  </button>
+                  {indicatorBlocks.length > 0 && (
+                    <button
+                      onClick={() => setShowAddRuleModal(true)}
+                      className={cn(
+                        'px-2 py-1 rounded border border-dashed text-[11px] font-medium transition-all',
+                        isLight
+                          ? 'border-orange-300 text-orange-400 hover:border-[#FF9933] hover:text-[#FF9933]'
+                          : 'border-orange-700/50 text-orange-500/60 hover:border-[#FF9933] hover:text-[#FF9933]',
+                      )}
+                    >
+                      + IF→DO
+                    </button>
+                  )}
+                </div>
               </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+
+        {blocks.length === 0 && (
+          <div className={cn('text-xs py-1', textMuted)}>
+            Select a preset or click + IND to start.
+          </div>
+        )}
+
+        {/* Modals */}
+        {showAddModal && (
+          <AddBlockModal
+            onSelect={addIndicator}
+            onClose={() => setShowAddModal(false)}
+            isLight={isLight}
+          />
+        )}
+        {showAddRuleModal && (
+          <AddRuleModal
+            indicatorBlocks={indicatorBlocks}
+            onAdd={addRule}
+            onClose={() => setShowAddRuleModal(false)}
+            isLight={isLight}
+          />
+        )}
+      </div>
+
+      {/* Results — full width */}
+      <div className="p-4">
+        {!stock && blocks.length > 0 && !result && !isLoading && (
+          <div className={cn('flex items-center justify-center py-12 text-sm', textMuted)}>
+            Select a stock from the grid above to run the backtest.
+          </div>
+        )}
+        {!stock && blocks.length === 0 && (
+          <div className={cn('flex items-center justify-center py-12 text-sm', textMuted)}>
+            Select a stock, then configure a strategy.
+          </div>
+        )}
+        {stock && !priceData && blocks.length > 0 && (
+          <div className={cn('flex items-center justify-center py-12 text-sm', textSecondary)}>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-[#FF9933] border-t-transparent rounded-full animate-spin" />
+              Loading price data...
             </div>
-          )}
-          {(result || isLoading || error || (stock && priceData)) && (
-            <ResultsPanel
-              result={result}
-              isLoading={isLoading}
-              error={error}
-              isLight={isLight}
-            />
-          )}
-        </div>
+          </div>
+        )}
+        {(result || isLoading || error || (stock && priceData)) && (
+          <ResultsPanel
+            result={result}
+            isLoading={isLoading}
+            error={error}
+            isLight={isLight}
+          />
+        )}
       </div>
     </div>
   );
