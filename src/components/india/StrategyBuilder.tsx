@@ -168,8 +168,15 @@ export function StrategyBuilder({
 
   // Derive config from blocks
   const config: StrategyConfig | null = useMemo(
-    () => blocksToStrategyConfig(blocks, sizing, rebalance, combineLogic),
-    [blocks, sizing, rebalance, combineLogic],
+    () => {
+      const c = blocksToStrategyConfig(blocks, sizing, rebalance, combineLogic);
+      if (blocks.length > 0) {
+        console.log('[StrategyBuilder] blocks:', blocks.length, 'config:', c ? `${c.indicators.length} ind, ${c.rules.length} rules` : 'NULL', 'priceData:', priceData ? 'YES' : 'NULL');
+      }
+      return c;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [blocks, sizing, rebalance, combineLogic, priceData],
   );
 
   const { result, isLoading, error } = useBacktest({
