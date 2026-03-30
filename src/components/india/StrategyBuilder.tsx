@@ -151,19 +151,49 @@ function getBlockLabel(
   return getActionLabel(block as ActionBlock);
 }
 
+const INDICATOR_RANGES: Record<string, string> = {
+  rsi: 'Range: 0-100. >70 overbought, <30 oversold, 50 = neutral',
+  stoch_rsi: 'Range: 0-1. >0.8 overbought, <0.2 oversold',
+  mfi: 'Range: 0-100. >80 overbought, <20 oversold',
+  williams_r: 'Range: -100 to 0. >-20 overbought, <-80 oversold',
+  cci: 'Range: unbounded. >+100 overbought, <-100 oversold',
+  bb_pct_b: 'Range: 0-1. 0 = lower band, 0.5 = middle, 1 = upper band',
+  adx: 'Range: 0-100. >25 strong trend, <20 weak/ranging',
+  macd: 'Range: unbounded. >0 bullish, <0 bearish. Crosses zero line for signals',
+  roc: 'Range: unbounded (%). >0 rising, <0 falling',
+  momentum: 'Range: unbounded. >0 rising, <0 falling',
+  tsi: 'Range: -100 to +100. >0 bullish, <0 bearish',
+  awesome_osc: 'Range: unbounded. >0 bullish, <0 bearish',
+  ppo: 'Range: unbounded (%). >0 bullish, <0 bearish',
+  z_score: 'Range: typically -3 to +3. >+2 high, <-2 low',
+  price_vs_high_low: 'Range: 0-1. 1 = at period high, 0 = at period low',
+  pct_from_high: 'Range: -100% to 0%. 0% = at the high',
+  supertrend: 'Range: +1 or -1. +1 = bullish (above line), -1 = bearish',
+  ts_momentum: 'Range: unbounded (%). >0 trending up, <0 trending down',
+  hist_vol: 'Range: 0+. Higher = more volatile. Typical: 0.1-0.5',
+  bb_width: 'Range: 0+. Low = squeeze (breakout expected), high = volatile',
+  atr: 'Range: 0+. Absolute price units. Higher = more volatile',
+  cmf: 'Range: -1 to +1. >0 buying pressure, <0 selling pressure',
+  obv: 'Range: unbounded. Trend direction matters, not absolute level',
+  sma: 'Range: price level. Compare to other MAs or price for crossover signals',
+  ema: 'Range: price level. Compare to other MAs or price for crossover signals',
+};
+
 function getBlockTooltip(
   block: PipelineBlock,
   blocks: readonly PipelineBlock[],
 ): string {
   if (block.kind === 'indicator') {
     const meta = INDICATOR_META[(block as IndicatorBlock).indicatorType];
-    return meta?.desc ?? '';
+    const range = INDICATOR_RANGES[(block as IndicatorBlock).indicatorType];
+    return (meta?.desc ?? '') + (range ? `\n${range}` : '');
   }
   if (block.kind === 'trigger') {
     const t = block as TriggerBlock;
     const src = findIndicatorBlock(blocks, t.sourceBlockId);
     const srcLabel = src ? formatBlockLabel(src.indicatorType, src.params) : '?';
-    return `When ${srcLabel} ${getTriggerLabel(t, blocks)}`;
+    const range = src ? INDICATOR_RANGES[src.indicatorType] : null;
+    return `When ${srcLabel} ${getTriggerLabel(t, blocks)}` + (range ? `\n${range}` : '');
   }
   const a = block as ActionBlock;
   return `Direction: ${a.direction}`;
@@ -760,7 +790,9 @@ function Tooltip({
           isLight ? 'bg-gray-900 text-gray-100' : 'bg-zinc-100 text-zinc-900',
         )}
       >
-        {text}
+        {text.split('\n').map((line, i) => (
+          <span key={i}>{i > 0 && <br />}{line}</span>
+        ))}
       </span>
     </span>
   );
