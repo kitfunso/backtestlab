@@ -282,6 +282,29 @@ export function StrategyBuilder({
     [expandedBlockId],
   );
 
+  const duplicateBlock = useCallback(
+    (id: string) => {
+      setBlocks((prev) => {
+        const block = prev.find((b) => b.id === id);
+        if (!block || block.kind !== 'indicator') return prev;
+        const ind = block as IndicatorBlock;
+        const newBlock: IndicatorBlock = {
+          id: blockId(),
+          kind: 'indicator',
+          indicatorType: ind.indicatorType,
+          params: { ...ind.params },
+        };
+        // Insert after the original
+        const idx = prev.indexOf(block);
+        const copy = [...prev];
+        copy.splice(idx + 1, 0, newBlock);
+        return copy;
+      });
+      setActivePreset(null);
+    },
+    [],
+  );
+
   const updateIndicatorParam = useCallback(
     (blockId: string, key: string, value: number) => {
       setBlocks((prev) =>
@@ -521,7 +544,7 @@ export function StrategyBuilder({
       {/* Split layout: Pipeline + Results */}
       <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr]">
         {/* Left: Block Pipeline */}
-        <div className={cn('p-4 space-y-0 border-r', cardBorder)}>
+        <div className={cn('p-2.5 space-y-0 border-r', cardBorder)}>
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="pipeline">
               {(provided) => (
@@ -574,6 +597,7 @@ export function StrategyBuilder({
                               )
                             }
                             onRemove={() => removeBlock(block.id)}
+                            onDuplicate={block.kind === 'indicator' ? () => duplicateBlock(block.id) : undefined}
                             onUpdateIndicatorParam={(key, val) =>
                               updateIndicatorParam(block.id, key, val)
                             }
@@ -595,12 +619,12 @@ export function StrategyBuilder({
           </DragDropContext>
 
           {/* Add buttons */}
-          <div className="relative pt-3 space-y-2">
+          <div className="relative pt-2 space-y-1.5">
             {blocks.length > 0 && (
-              <div className="flex justify-center mb-2">
+              <div className="flex justify-center mb-1">
                 <div
                   className={cn(
-                    'w-[2px] h-4 border-l-2 border-dashed',
+                    'w-[2px] h-2 border-l-2 border-dashed',
                     isLight ? 'border-gray-300' : 'border-zinc-600',
                   )}
                 />
@@ -748,7 +772,7 @@ function Connector({
       <div
         className={cn(
           'w-[2px] border-l-2 border-dashed',
-          showLogicToggle ? 'h-2' : 'h-4',
+          showLogicToggle ? 'h-1' : 'h-2',
           isLight ? 'border-gray-300' : 'border-zinc-600',
         )}
       />
@@ -788,6 +812,7 @@ function BlockPill({
   dragHandleProps,
   onToggleExpand,
   onRemove,
+  onDuplicate,
   onUpdateIndicatorParam,
   onUpdateTrigger,
   onUpdateAction,
@@ -800,6 +825,7 @@ function BlockPill({
   dragHandleProps: DraggableProvidedDragHandleProps | null;
   onToggleExpand: () => void;
   onRemove: () => void;
+  onDuplicate?: () => void;
   onUpdateIndicatorParam: (key: string, value: number) => void;
   onUpdateTrigger: (updates: Partial<Pick<TriggerBlock, 'condition' | 'threshold'>>) => void;
   onUpdateAction: (direction: ActionBlock['direction']) => void;
@@ -835,7 +861,7 @@ function BlockPill({
         )}
       >
         {/* Collapsed pill row */}
-        <div className="flex items-center gap-0 min-h-[36px]">
+        <div className="flex items-center gap-0 min-h-[30px]">
           {/* Left color border */}
           {isGradient ? (
             <div
@@ -889,17 +915,19 @@ function BlockPill({
             {label}
           </button>
 
-          {/* Remove */}
+          {/* Duplicate + Remove */}
+          {onDuplicate && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+              title="Duplicate"
+              className={cn('text-[11px] px-1 py-1 flex-shrink-0 transition-colors', textMuted, 'hover:text-[#FF9933]')}
+            >
+              &#x2398;
+            </button>
+          )}
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-            className={cn(
-              'text-[11px] px-2 py-1 flex-shrink-0 transition-colors',
-              textMuted,
-              'hover:text-[#EF4444]',
-            )}
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            className={cn('text-[11px] px-1.5 py-1 flex-shrink-0 transition-colors', textMuted, 'hover:text-[#EF4444]')}
           >
             &#x2715;
           </button>
