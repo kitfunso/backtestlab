@@ -25,56 +25,57 @@ import { ResultsPanel } from './ResultsPanel';
 
 interface IndicatorMeta {
   label: string;
+  desc: string;
   category: 'Trend' | 'Momentum' | 'Volatility' | 'Volume' | 'Price';
   params: { key: string; label: string; min: number; max: number; step: number; default: number }[];
 }
 
 const INDICATOR_META: Record<IndicatorType, IndicatorMeta> = {
-  sma: { label: 'SMA', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
-  ema: { label: 'EMA', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
-  dema: { label: 'DEMA', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
-  tema: { label: 'TEMA', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
-  wma: { label: 'WMA', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
-  hull_ma: { label: 'Hull MA', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 4, max: 200, step: 1, default: 20 }] },
-  vwma: { label: 'VWMA', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
-  supertrend: { label: 'SuperTrend', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 10 }, { key: 'multiplier', label: 'Multiplier', min: 1, max: 5, step: 0.1, default: 3 }] },
-  ichimoku: { label: 'Ichimoku', category: 'Trend', params: [{ key: 'conversion', label: 'Conversion', min: 5, max: 30, step: 1, default: 9 }, { key: 'base', label: 'Base', min: 10, max: 60, step: 1, default: 26 }, { key: 'span_b', label: 'Span B', min: 20, max: 120, step: 1, default: 52 }] },
-  parabolic_sar: { label: 'Parabolic SAR', category: 'Trend', params: [{ key: 'af_start', label: 'AF Start', min: 0.01, max: 0.1, step: 0.005, default: 0.02 }, { key: 'af_max', label: 'AF Max', min: 0.1, max: 0.5, step: 0.01, default: 0.2 }] },
-  linear_regression: { label: 'Linear Reg', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
-  donchian: { label: 'Donchian', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
-  rsi: { label: 'RSI', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 2, max: 50, step: 1, default: 14 }] },
-  stoch_rsi: { label: 'Stoch RSI', category: 'Momentum', params: [{ key: 'rsi_period', label: 'RSI Period', min: 2, max: 50, step: 1, default: 14 }, { key: 'stoch_period', label: 'Stoch Period', min: 2, max: 50, step: 1, default: 14 }, { key: 'k_smooth', label: 'K Smooth', min: 1, max: 10, step: 1, default: 3 }] },
-  macd: { label: 'MACD', category: 'Momentum', params: [{ key: 'fast', label: 'Fast', min: 5, max: 50, step: 1, default: 12 }, { key: 'slow', label: 'Slow', min: 10, max: 100, step: 1, default: 26 }, { key: 'signal', label: 'Signal', min: 2, max: 20, step: 1, default: 9 }] },
-  adx: { label: 'ADX', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 14 }] },
-  cci: { label: 'CCI', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 20 }] },
-  roc: { label: 'ROC', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 1, max: 50, step: 1, default: 12 }] },
-  williams_r: { label: 'Williams %R', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 14 }] },
-  momentum: { label: 'Momentum', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 1, max: 50, step: 1, default: 10 }] },
-  tsi: { label: 'TSI', category: 'Momentum', params: [{ key: 'long_period', label: 'Long', min: 10, max: 50, step: 1, default: 25 }, { key: 'short_period', label: 'Short', min: 5, max: 25, step: 1, default: 13 }] },
-  awesome_osc: { label: 'Awesome Osc', category: 'Momentum', params: [{ key: 'fast', label: 'Fast', min: 2, max: 20, step: 1, default: 5 }, { key: 'slow', label: 'Slow', min: 10, max: 50, step: 1, default: 34 }] },
-  ppo: { label: 'PPO', category: 'Momentum', params: [{ key: 'fast', label: 'Fast', min: 5, max: 50, step: 1, default: 12 }, { key: 'slow', label: 'Slow', min: 10, max: 100, step: 1, default: 26 }] },
-  ts_momentum: { label: 'TS Momentum', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 5, max: 250, step: 1, default: 126 }] },
-  bollinger: { label: 'Bollinger Bands', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }, { key: 'std_dev', label: 'Std Dev', min: 0.5, max: 4, step: 0.1, default: 2 }] },
-  atr: { label: 'ATR', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 14 }] },
-  keltner: { label: 'Keltner Channel', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 20 }, { key: 'multiplier', label: 'Multiplier', min: 0.5, max: 4, step: 0.1, default: 1.5 }] },
-  hist_vol: { label: 'Historical Vol', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
-  bb_pct_b: { label: 'BB %B', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }, { key: 'std_dev', label: 'Std Dev', min: 0.5, max: 4, step: 0.1, default: 2 }] },
-  bb_width: { label: 'BB Width', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }, { key: 'std_dev', label: 'Std Dev', min: 0.5, max: 4, step: 0.1, default: 2 }] },
-  std_dev: { label: 'Std Dev', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
-  chaikin_vol: { label: 'Chaikin Vol', category: 'Volatility', params: [{ key: 'ema_period', label: 'EMA Period', min: 5, max: 50, step: 1, default: 10 }, { key: 'roc_period', label: 'ROC Period', min: 5, max: 50, step: 1, default: 10 }] },
-  obv: { label: 'OBV', category: 'Volume', params: [] },
-  vol_sma: { label: 'Volume SMA', category: 'Volume', params: [{ key: 'period', label: 'Period', min: 2, max: 100, step: 1, default: 20 }] },
-  accum_dist: { label: 'Accum/Dist', category: 'Volume', params: [] },
-  cmf: { label: 'CMF', category: 'Volume', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 20 }] },
-  mfi: { label: 'MFI', category: 'Volume', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 14 }] },
-  vwap: { label: 'VWAP', category: 'Volume', params: [] },
-  pivot_points: { label: 'Pivot Points', category: 'Price', params: [] },
-  price_vs_high_low: { label: 'Price vs H/L', category: 'Price', params: [{ key: 'period', label: 'Period', min: 5, max: 250, step: 1, default: 52 }] },
-  z_score: { label: 'Z-Score', category: 'Price', params: [{ key: 'period', label: 'Period', min: 10, max: 200, step: 1, default: 50 }] },
-  heikin_ashi: { label: 'Heikin Ashi', category: 'Price', params: [] },
-  pct_from_high: { label: '% from High', category: 'Price', params: [{ key: 'period', label: 'Period', min: 5, max: 250, step: 1, default: 52 }] },
-  support_resistance: { label: 'S/R Levels', category: 'Price', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
-  close_price: { label: 'Close Price', category: 'Price', params: [] },
+  sma: { label: 'SMA', desc: 'Simple Moving Average: average of last N closing prices. Smooths noise to reveal trend direction.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
+  ema: { label: 'EMA', desc: 'Exponential Moving Average: weighted average giving more importance to recent prices. Reacts faster than SMA.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
+  dema: { label: 'DEMA', desc: 'Double EMA: applies EMA twice to reduce lag further. Formula: 2*EMA(N) - EMA(EMA(N)).', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
+  tema: { label: 'TEMA', desc: 'Triple EMA: three-layer EMA for minimal lag. Formula: 3*EMA - 3*EMA(EMA) + EMA(EMA(EMA)).', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
+  wma: { label: 'WMA', desc: 'Weighted Moving Average: linearly weighted, most recent price gets highest weight.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
+  hull_ma: { label: 'Hull MA', desc: 'Hull Moving Average: uses WMA of difference between short and long WMA. Very low lag, smooth output.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 4, max: 200, step: 1, default: 20 }] },
+  vwma: { label: 'VWMA', desc: 'Volume-Weighted Moving Average: like SMA but weights each price by its volume. High-volume days matter more.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 2, max: 200, step: 1, default: 20 }] },
+  supertrend: { label: 'SuperTrend', desc: 'Trend-following indicator using ATR bands. Outputs +1 (bullish) or -1 (bearish) based on price vs dynamic support/resistance.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 10 }, { key: 'multiplier', label: 'Multiplier', min: 1, max: 5, step: 0.1, default: 3 }] },
+  ichimoku: { label: 'Ichimoku', desc: 'Ichimoku Cloud: Japanese system with 5 lines showing support, resistance, trend, and momentum at a glance.', category: 'Trend', params: [{ key: 'conversion', label: 'Conversion', min: 5, max: 30, step: 1, default: 9 }, { key: 'base', label: 'Base', min: 10, max: 60, step: 1, default: 26 }, { key: 'span_b', label: 'Span B', min: 20, max: 120, step: 1, default: 52 }] },
+  parabolic_sar: { label: 'Parabolic SAR', desc: 'Parabolic Stop and Reverse: places dots above/below price to signal trend direction and trailing stop levels.', category: 'Trend', params: [{ key: 'af_start', label: 'AF Start', min: 0.01, max: 0.1, step: 0.005, default: 0.02 }, { key: 'af_max', label: 'AF Max', min: 0.1, max: 0.5, step: 0.01, default: 0.2 }] },
+  linear_regression: { label: 'Linear Reg', desc: 'Linear Regression: fits a straight line through the last N prices. Shows the statistically expected price level.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
+  donchian: { label: 'Donchian', desc: 'Donchian Channel: highest high and lowest low over N periods. Breakout above upper = bullish, below lower = bearish.', category: 'Trend', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
+  rsi: { label: 'RSI', desc: 'Relative Strength Index (0-100): measures speed of price changes. Above 70 = overbought, below 30 = oversold.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 2, max: 50, step: 1, default: 14 }] },
+  stoch_rsi: { label: 'Stoch RSI', desc: 'Stochastic RSI (0-1): applies Stochastic formula to RSI values. More sensitive than plain RSI for overbought/oversold.', category: 'Momentum', params: [{ key: 'rsi_period', label: 'RSI Period', min: 2, max: 50, step: 1, default: 14 }, { key: 'stoch_period', label: 'Stoch Period', min: 2, max: 50, step: 1, default: 14 }, { key: 'k_smooth', label: 'K Smooth', min: 1, max: 10, step: 1, default: 3 }] },
+  macd: { label: 'MACD', desc: 'Moving Average Convergence Divergence: difference between fast and slow EMA. Positive = bullish momentum, negative = bearish.', category: 'Momentum', params: [{ key: 'fast', label: 'Fast', min: 5, max: 50, step: 1, default: 12 }, { key: 'slow', label: 'Slow', min: 10, max: 100, step: 1, default: 26 }, { key: 'signal', label: 'Signal', min: 2, max: 20, step: 1, default: 9 }] },
+  adx: { label: 'ADX', desc: 'Average Directional Index (0-100): measures trend strength regardless of direction. Above 25 = strong trend, below 20 = weak/ranging.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 14 }] },
+  cci: { label: 'CCI', desc: 'Commodity Channel Index: measures deviation from statistical mean. Above +100 = overbought, below -100 = oversold.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 20 }] },
+  roc: { label: 'ROC', desc: 'Rate of Change (%): percentage change over N periods. Positive = upward momentum, negative = downward.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 1, max: 50, step: 1, default: 12 }] },
+  williams_r: { label: 'Williams %R', desc: 'Williams %R (-100 to 0): shows where close is relative to high-low range. Above -20 = overbought, below -80 = oversold.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 14 }] },
+  momentum: { label: 'Momentum', desc: 'Price Momentum: difference between current price and price N bars ago. Positive = rising, negative = falling.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 1, max: 50, step: 1, default: 10 }] },
+  tsi: { label: 'TSI', desc: 'True Strength Index (-100 to +100): double-smoothed momentum oscillator. Crosses above 0 = bullish, below = bearish.', category: 'Momentum', params: [{ key: 'long_period', label: 'Long', min: 10, max: 50, step: 1, default: 25 }, { key: 'short_period', label: 'Short', min: 5, max: 25, step: 1, default: 13 }] },
+  awesome_osc: { label: 'Awesome Osc', desc: 'Awesome Oscillator: difference between 5-period and 34-period SMA of midpoint prices. Positive = bullish, negative = bearish.', category: 'Momentum', params: [{ key: 'fast', label: 'Fast', min: 2, max: 20, step: 1, default: 5 }, { key: 'slow', label: 'Slow', min: 10, max: 50, step: 1, default: 34 }] },
+  ppo: { label: 'PPO', desc: 'Percentage Price Oscillator: MACD expressed as a percentage. Allows comparison across different price levels.', category: 'Momentum', params: [{ key: 'fast', label: 'Fast', min: 5, max: 50, step: 1, default: 12 }, { key: 'slow', label: 'Slow', min: 10, max: 100, step: 1, default: 26 }] },
+  ts_momentum: { label: 'TS Momentum', desc: 'Time-Series Momentum: cumulative return over lookback period. Positive = trending up, negative = trending down.', category: 'Momentum', params: [{ key: 'period', label: 'Period', min: 5, max: 250, step: 1, default: 126 }] },
+  bollinger: { label: 'Bollinger Bands', desc: 'Bollinger Bands: SMA with upper/lower bands at N standard deviations. Price near upper band = potentially overbought.', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }, { key: 'std_dev', label: 'Std Dev', min: 0.5, max: 4, step: 0.1, default: 2 }] },
+  atr: { label: 'ATR', desc: 'Average True Range: measures volatility as the average of true ranges (high-low including gaps). Higher = more volatile.', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 14 }] },
+  keltner: { label: 'Keltner Channel', desc: 'Keltner Channel: EMA with bands based on ATR. Similar to Bollinger but uses ATR instead of standard deviation.', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 20 }, { key: 'multiplier', label: 'Multiplier', min: 0.5, max: 4, step: 0.1, default: 1.5 }] },
+  hist_vol: { label: 'Historical Vol', desc: 'Historical Volatility: annualized standard deviation of daily returns over N periods. Measures realized price variability.', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
+  bb_pct_b: { label: 'BB %B', desc: 'Bollinger %B (0 to 1): shows where price sits within the bands. 0 = at lower band, 1 = at upper band, 0.5 = at middle.', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }, { key: 'std_dev', label: 'Std Dev', min: 0.5, max: 4, step: 0.1, default: 2 }] },
+  bb_width: { label: 'BB Width', desc: 'Bollinger Band Width: distance between upper and lower bands as % of middle. Low width = squeeze (breakout expected).', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }, { key: 'std_dev', label: 'Std Dev', min: 0.5, max: 4, step: 0.1, default: 2 }] },
+  std_dev: { label: 'Std Dev', desc: 'Standard Deviation: measures price dispersion over N periods. Rising std dev = increasing volatility.', category: 'Volatility', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
+  chaikin_vol: { label: 'Chaikin Vol', desc: 'Chaikin Volatility: rate of change of the EMA of (High - Low) range. Measures whether volatility is expanding or contracting.', category: 'Volatility', params: [{ key: 'ema_period', label: 'EMA Period', min: 5, max: 50, step: 1, default: 10 }, { key: 'roc_period', label: 'ROC Period', min: 5, max: 50, step: 1, default: 10 }] },
+  obv: { label: 'OBV', desc: 'On-Balance Volume: cumulative sum of volume (added on up days, subtracted on down days). Divergence from price signals potential reversal.', category: 'Volume', params: [] },
+  vol_sma: { label: 'Volume SMA', desc: 'Volume Simple Moving Average: average trading volume over N periods. Compare current volume to this for unusual activity.', category: 'Volume', params: [{ key: 'period', label: 'Period', min: 2, max: 100, step: 1, default: 20 }] },
+  accum_dist: { label: 'Accum/Dist', desc: 'Accumulation/Distribution Line: volume-weighted measure of whether shares are being accumulated (bought) or distributed (sold).', category: 'Volume', params: [] },
+  cmf: { label: 'CMF', desc: 'Chaikin Money Flow (-1 to +1): measures buying/selling pressure over N periods. Positive = buying pressure, negative = selling.', category: 'Volume', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 20 }] },
+  mfi: { label: 'MFI', desc: 'Money Flow Index (0-100): volume-weighted RSI. Above 80 = overbought with high volume, below 20 = oversold.', category: 'Volume', params: [{ key: 'period', label: 'Period', min: 5, max: 50, step: 1, default: 14 }] },
+  vwap: { label: 'VWAP', desc: 'Volume-Weighted Average Price: average price weighted by volume from the start of data. Institutional benchmark for fair value.', category: 'Volume', params: [] },
+  pivot_points: { label: 'Pivot Points', desc: 'Pivot Points: support/resistance levels calculated from previous high, low, close. Used to identify intraday turning points.', category: 'Price', params: [] },
+  price_vs_high_low: { label: 'Price vs H/L', desc: 'Price vs High/Low (0 to 1): where current price sits in the N-period range. 1 = at the high, 0 = at the low.', category: 'Price', params: [{ key: 'period', label: 'Period', min: 5, max: 250, step: 1, default: 52 }] },
+  z_score: { label: 'Z-Score', desc: 'Z-Score of Price: how many standard deviations price is from its N-period mean. Above +2 = statistically high, below -2 = low.', category: 'Price', params: [{ key: 'period', label: 'Period', min: 10, max: 200, step: 1, default: 50 }] },
+  heikin_ashi: { label: 'Heikin Ashi', desc: 'Heikin Ashi Trend: smoothed candlestick technique. Outputs trend direction based on modified open/close calculations.', category: 'Price', params: [] },
+  pct_from_high: { label: '% from High', desc: 'Percent from High: how far price is below its N-period high. 0% = at the high, -20% = 20% below the high.', category: 'Price', params: [{ key: 'period', label: 'Period', min: 5, max: 250, step: 1, default: 52 }] },
+  support_resistance: { label: 'S/R Levels', desc: 'Support/Resistance: identifies key price levels from N-period highs and lows where price tends to reverse.', category: 'Price', params: [{ key: 'period', label: 'Period', min: 5, max: 100, step: 1, default: 20 }] },
+  close_price: { label: 'Close Price', desc: 'Raw closing price. Used internally for comparing price against moving averages.', category: 'Price', params: [] },
 };
 
 const INDICATOR_CATEGORIES = ['Trend', 'Momentum', 'Volatility', 'Volume', 'Price'] as const;
@@ -283,17 +284,19 @@ export function StrategyBuilder({ stock, priceData, isLight, onClose }: Strategy
   }, []);
 
   const addRule = useCallback((indicatorIndex: number) => {
+    const type = indicators[indicatorIndex]?.type;
+    const defaultRule = getDefaultRule(type, indicatorIndex);
     setRules((prev) => [
       ...prev,
-      {
+      defaultRule ?? {
         indicator_index: indicatorIndex,
-        condition: 'crosses_above' as SignalCondition,
+        condition: 'is_above' as SignalCondition,
         threshold: 0,
-        direction: 'long' as const,
+        direction: 'both' as const,
       },
     ]);
     setActivePreset(null);
-  }, []);
+  }, [indicators]);
 
   const updateRule = useCallback(
     (ruleIndex: number, updates: Partial<SignalRule>) => {
@@ -714,6 +717,7 @@ function AddIndicatorDropdown({
                 <button
                   key={type}
                   onClick={() => onSelect(type)}
+                  title={meta.desc}
                   className={cn(
                     'w-full text-left px-3 py-1.5 text-xs transition-colors',
                     isLight
