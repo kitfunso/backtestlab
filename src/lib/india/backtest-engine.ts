@@ -305,6 +305,11 @@ function generateSignals(
   // Evaluate rules WITHOUT hold-signal logic first (raw trigger points only)
   const rawTriggers: number[][] = rules.map((rule) => evaluateRuleRaw(rule, indicators, n));
 
+  // Level conditions (is_above/is_below) output a signal every bar the condition is true
+  // and 0 when false. Crossing conditions fire once. The OR combiner needs to know which
+  // rules are level-based so it can go flat when level conditions stop being true.
+  const hasLevelRule = rules.some((r) => r.condition === 'is_above' || r.condition === 'is_below');
+
   const combined: number[] = new Array(n).fill(0);
 
   if (logic === 'or') {
@@ -312,11 +317,17 @@ function generateSignals(
     // The LAST trigger event determines the current position.
     let currentSignal = 0;
     for (let i = 0; i < n; i++) {
-      // Check if any rule triggers at this bar (raw trigger, not held)
+      let anyFired = false;
       for (const rt of rawTriggers) {
         if (rt[i] !== 0) {
           currentSignal = rt[i]; // latest trigger wins
+          anyFired = true;
         }
+      }
+      // For level conditions: if no trigger fires this bar, go flat.
+      // For crossing conditions only: hold the last signal (no reset).
+      if (!anyFired && hasLevelRule) {
+        currentSignal = 0;
       }
       combined[i] = currentSignal;
     }
