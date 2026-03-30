@@ -34,6 +34,7 @@ import type {
   TriggerBlock,
   ActionBlock,
 } from '@/lib/india/block-types';
+import { blockId } from '@/lib/india/block-types';
 import {
   blocksToStrategyConfig,
   presetToBlocks,
@@ -79,14 +80,16 @@ function getTriggerLabel(
   trigger: TriggerBlock,
   blocks: readonly PipelineBlock[],
 ): string {
+  const src = findIndicatorBlock(blocks, trigger.sourceBlockId);
+  const srcLabel = src ? formatBlockLabel(src.indicatorType, src.params) : '?';
   const cond = CONDITION_LABELS[trigger.condition] ?? trigger.condition;
   if (trigger.referenceBlockId) {
     const ref = findIndicatorBlock(blocks, trigger.referenceBlockId);
-    if (ref) return `${cond} ${formatBlockLabel(ref.indicatorType, ref.params)}`;
-    return cond;
+    if (ref) return `${srcLabel} ${cond} ${formatBlockLabel(ref.indicatorType, ref.params)}`;
+    return `${srcLabel} ${cond}`;
   }
-  if (trigger.threshold !== undefined) return `${cond} ${trigger.threshold}`;
-  return cond;
+  if (trigger.threshold !== undefined) return `${srcLabel} ${cond} ${trigger.threshold}`;
+  return `${srcLabel} ${cond}`;
 }
 
 function getActionLabel(action: ActionBlock): string {
@@ -160,6 +163,7 @@ export function StrategyBuilder({
   const [rebalance, setRebalance] = useState<RebalanceFreq>('daily');
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddRuleModal, setShowAddRuleModal] = useState(false);
   const [expandedBlockId, setExpandedBlockId] = useState<string | null>(null);
 
   // Derive config from blocks
@@ -211,6 +215,25 @@ export function StrategyBuilder({
     setActivePreset(null);
     setShowAddModal(false);
   }, []);
+
+  const addRule = useCallback(
+    (sourceBlockId: string, referenceBlockId?: string) => {
+      const triggerId = blockId();
+      const trigger: TriggerBlock = referenceBlockId
+        ? { id: triggerId, kind: 'trigger', sourceBlockId, condition: 'is_above', referenceBlockId }
+        : { id: triggerId, kind: 'trigger', sourceBlockId, condition: 'is_above', threshold: 0 };
+      const action: ActionBlock = {
+        id: blockId(),
+        kind: 'action',
+        triggerBlockId: triggerId,
+        direction: 'both',
+      };
+      setBlocks((prev) => [...prev, trigger, action]);
+      setActivePreset(null);
+      setShowAddRuleModal(false);
+    },
+    [],
+  );
 
   const removeBlock = useCallback(
     (id: string) => {
@@ -292,8 +315,9 @@ export function StrategyBuilder({
   const textSecondary = isLight ? 'text-gray-500' : 'text-zinc-400';
   const textMuted = isLight ? 'text-gray-400' : 'text-zinc-500';
 
-  // Count indicator blocks (for combine logic toggle visibility)
-  const indicatorCount = blocks.filter((b) => b.kind === 'indicator').length;
+  // Indicator blocks for combine logic toggle and add-rule modal
+  const indicatorBlocks = useMemo(() => blocks.filter((b): b is IndicatorBlock => b.kind === 'indicator'), [blocks]);
+  const indicatorCount = indicatorBlocks.length;
 
   return (
     <div className={cn('rounded-xl border', cardBorder, cardBg)}>
@@ -532,8 +556,8 @@ export function StrategyBuilder({
             </Droppable>
           </DragDropContext>
 
-          {/* Add Indicator Button */}
-          <div className="relative pt-3">
+          {/* Add buttons */}
+          <div className="relative pt-3 space-y-2">
             {blocks.length > 0 && (
               <div className="flex justify-center mb-2">
                 <div
@@ -555,6 +579,19 @@ export function StrategyBuilder({
             >
               + Add Indicator
             </button>
+            {indicatorBlocks.length > 0 && (
+              <button
+                onClick={() => setShowAddRuleModal(true)}
+                className={cn(
+                  'w-full py-2 rounded-lg border border-dashed text-xs font-medium transition-all',
+                  isLight
+                    ? 'border-orange-300 text-orange-500 hover:border-[#FF9933] hover:text-[#FF9933]'
+                    : 'border-orange-700/50 text-orange-500/70 hover:border-[#FF9933] hover:text-[#FF9933]',
+                )}
+              >
+                + Add Rule (IF → DO)
+              </button>
+            )}
           </div>
 
           {blocks.length === 0 && (
@@ -568,6 +605,16 @@ export function StrategyBuilder({
             <AddBlockModal
               onSelect={addIndicator}
               onClose={() => setShowAddModal(false)}
+              isLight={isLight}
+            />
+          )}
+
+          {/* Add Rule Modal */}
+          {showAddRuleModal && (
+            <AddRuleModal
+              indicatorBlocks={indicatorBlocks}
+              onAdd={addRule}
+              onClose={() => setShowAddRuleModal(false)}
               isLight={isLight}
             />
           )}
@@ -1095,6 +1142,104 @@ function AddBlockModal({
             </div>
           );
         })}
+      </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Add Rule Modal — pick source (and optional reference) indicator for a new IF→DO pair
+// ---------------------------------------------------------------------------
+
+function AddRuleModal({
+  indicatorBlocks,
+  onAdd,
+  onClose,
+  isLight,
+}: {
+  indicatorBlocks: readonly IndicatorBlock[];
+  onAdd: (sourceBlockId: string, referenceBlockId?: string) => void;
+  onClose: () => void;
+  isLight: boolean;
+}) {
+  const [sourceId, setSourceId] = useState(indicatorBlocks[0]?.id ?? '');
+  const [useRef, setUseRef] = useState(false);
+  const [refId, setRefId] = useState(indicatorBlocks[1]?.id ?? '');
+  const textMuted = isLight ? 'text-gray-400' : 'text-zinc-500';
+  const selectCls = cn(
+    'text-[11px] font-mono px-1.5 py-1 rounded border outline-none w-full',
+    isLight
+      ? 'bg-white border-gray-200 text-gray-900'
+      : 'bg-zinc-900 border-zinc-700 text-zinc-200',
+  );
+
+  return (
+    <>
+      <div className="fixed inset-0 z-[90] bg-black/20" onClick={onClose} />
+      <div
+        className={cn(
+          'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] z-[100] rounded-xl border shadow-2xl p-4',
+          isLight ? 'bg-white border-gray-200' : 'bg-zinc-900 border-zinc-700',
+        )}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <span className={cn('text-xs font-semibold', isLight ? 'text-gray-900' : 'text-zinc-100')}>
+            Add Rule (IF → DO)
+          </span>
+          <button onClick={onClose} className={cn('text-[11px]', textMuted, 'hover:text-[#EF4444]')}>
+            &#x2715;
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className={cn('text-[10px] uppercase tracking-wider font-semibold block mb-1', textMuted)}>
+              When this indicator...
+            </label>
+            <select value={sourceId} onChange={(e) => setSourceId(e.target.value)} className={selectCls}>
+              {indicatorBlocks.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {formatBlockLabel(b.indicatorType, b.params)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="useRef"
+              checked={useRef}
+              onChange={(e) => setUseRef(e.target.checked)}
+              className="accent-[#FF9933]"
+            />
+            <label htmlFor="useRef" className={cn('text-[11px]', isLight ? 'text-gray-700' : 'text-zinc-300')}>
+              Compare against another indicator
+            </label>
+          </div>
+
+          {useRef && indicatorBlocks.length >= 2 && (
+            <div>
+              <label className={cn('text-[10px] uppercase tracking-wider font-semibold block mb-1', textMuted)}>
+                ...is compared to
+              </label>
+              <select value={refId} onChange={(e) => setRefId(e.target.value)} className={selectCls}>
+                {indicatorBlocks.filter((b) => b.id !== sourceId).map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {formatBlockLabel(b.indicatorType, b.params)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <button
+            onClick={() => onAdd(sourceId, useRef ? refId : undefined)}
+            className="w-full py-2 rounded-lg bg-[#FF9933] text-white text-xs font-semibold hover:bg-[#FF9933]/90 transition-colors"
+          >
+            Add Rule
+          </button>
+        </div>
       </div>
     </>
   );
