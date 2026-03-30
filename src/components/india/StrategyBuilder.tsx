@@ -257,9 +257,20 @@ export function StrategyBuilder({
   const addRule = useCallback(
     (sourceBlockId: string, referenceBlockId?: string) => {
       const triggerId = blockId();
+
+      // Smart default threshold based on indicator type
+      const srcBlock = blocks.find((b) => b.id === sourceBlockId) as IndicatorBlock | undefined;
+      const srcType = srcBlock?.indicatorType;
+      let defaultThreshold = 0;
+      let defaultCondition: SignalCondition = 'is_above';
+      if (srcType === 'rsi' || srcType === 'stoch_rsi' || srcType === 'mfi') defaultThreshold = 50;
+      else if (srcType === 'williams_r') defaultThreshold = -50;
+      else if (srcType === 'bb_pct_b') defaultThreshold = 0.5;
+      else if (srcType === 'cci') defaultThreshold = 100;
+
       const trigger: TriggerBlock = referenceBlockId
-        ? { id: triggerId, kind: 'trigger', sourceBlockId, condition: 'is_above', referenceBlockId }
-        : { id: triggerId, kind: 'trigger', sourceBlockId, condition: 'is_above', threshold: 0 };
+        ? { id: triggerId, kind: 'trigger', sourceBlockId, condition: defaultCondition, referenceBlockId }
+        : { id: triggerId, kind: 'trigger', sourceBlockId, condition: defaultCondition, threshold: defaultThreshold };
       const action: ActionBlock = {
         id: blockId(),
         kind: 'action',
@@ -270,7 +281,7 @@ export function StrategyBuilder({
       setActivePreset(null);
       setShowAddRuleModal(false);
     },
-    [],
+    [blocks],
   );
 
   const removeBlock = useCallback(
