@@ -684,12 +684,32 @@ export function StrategyBuilder({
 
         {/* Right: Results */}
         <div className="p-4">
-          <ResultsPanel
-            result={result}
-            isLoading={isLoading}
-            error={error}
-            isLight={isLight}
-          />
+          {!stock && blocks.length > 0 && !result && !isLoading && (
+            <div className={cn('flex items-center justify-center h-full text-sm', textMuted)}>
+              Select a stock from the grid above to run the backtest.
+            </div>
+          )}
+          {!stock && blocks.length === 0 && (
+            <div className={cn('flex items-center justify-center h-full text-sm', textMuted)}>
+              Select a stock, then configure a strategy.
+            </div>
+          )}
+          {stock && !priceData && blocks.length > 0 && (
+            <div className={cn('flex items-center justify-center h-full text-sm', textSecondary)}>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-[#FF9933] border-t-transparent rounded-full animate-spin" />
+                Loading price data...
+              </div>
+            </div>
+          )}
+          {(result || isLoading || error || (stock && priceData)) && (
+            <ResultsPanel
+              result={result}
+              isLoading={isLoading}
+              error={error}
+              isLight={isLight}
+            />
+          )}
         </div>
       </div>
     </div>
