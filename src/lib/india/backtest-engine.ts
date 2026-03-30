@@ -305,31 +305,35 @@ function generateSignals(
   // Evaluate rules WITHOUT hold-signal logic first (raw trigger points only)
   const rawTriggers: number[][] = rules.map((rule) => evaluateRuleRaw(rule, indicators, n));
 
-  // Level conditions (is_above/is_below) output a signal every bar the condition is true
-  // and 0 when false. Crossing conditions fire once. The OR combiner needs to know which
-  // rules are level-based so it can go flat when level conditions stop being true.
-  const hasLevelRule = rules.some((r) => r.condition === 'is_above' || r.condition === 'is_below');
+  // Per-rule: is this a level condition (is_above/is_below) that outputs every bar?
+  // Level rules go flat when their condition stops. Crossing rules hold until next event.
+  const isLevel: boolean[] = rules.map((r) => r.condition === 'is_above' || r.condition === 'is_below');
 
   const combined: number[] = new Array(n).fill(0);
 
   if (logic === 'or') {
-    // OR: merge all triggers into a single state machine.
-    // The LAST trigger event determines the current position.
-    let currentSignal = 0;
+    // OR: build held signal per rule, then take the strongest active signal.
+    // Level rules: directly use raw output (0 = flat when condition not met).
+    // Crossing rules: hold last non-zero value until a new event.
+    const heldPerRule: number[][] = rawTriggers.map((raw, r) => {
+      if (isLevel[r]) return raw; // level: raw output IS the signal (0 = flat)
+      // crossing: hold last non-zero
+      const held: number[] = new Array(n).fill(0);
+      let last = 0;
+      for (let i = 0; i < n; i++) {
+        if (raw[i] !== 0) last = raw[i];
+        held[i] = last;
+      }
+      return held;
+    });
+
     for (let i = 0; i < n; i++) {
-      let anyFired = false;
-      for (const rt of rawTriggers) {
-        if (rt[i] !== 0) {
-          currentSignal = rt[i]; // latest trigger wins
-          anyFired = true;
-        }
+      // Pick the last non-zero held signal (any rule that's active wins)
+      let sig = 0;
+      for (const held of heldPerRule) {
+        if (held[i] !== 0) sig = held[i];
       }
-      // For level conditions: if no trigger fires this bar, go flat.
-      // For crossing conditions only: hold the last signal (no reset).
-      if (!anyFired && hasLevelRule) {
-        currentSignal = 0;
-      }
-      combined[i] = currentSignal;
+      combined[i] = sig;
     }
   } else {
     // AND: all non-neutral held signals must agree.
