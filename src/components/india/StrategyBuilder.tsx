@@ -541,74 +541,83 @@ export function StrategyBuilder({
         ))}
       </div>
 
-      {/* Block Pipeline — one block per row, compact */}
+      {/* Block Pipeline — rule groups on one row each, AND/OR separates groups */}
       <div className={cn('px-4 py-2 border-b', cardBorder)}>
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="pipeline">
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="space-y-1"
-              >
-                {blocks.map((block, index) => (
-                  <Draggable
-                    key={block.id}
-                    draggableId={block.id}
-                    index={index}
-                  >
-                    {(dragProvided, snapshot) => (
-                      <div
-                        ref={dragProvided.innerRef}
-                        {...dragProvided.draggableProps}
-                      >
-                        {/* AND/OR between rule groups */}
-                        {blocks[index - 1]?.kind === 'action' && block.kind === 'indicator' && (
-                          <div className="flex justify-center py-0.5">
+        {(() => {
+          // Split blocks into rule groups: each group ends when an action block is followed by an indicator
+          const groups: PipelineBlock[][] = [];
+          let current: PipelineBlock[] = [];
+          for (let i = 0; i < blocks.length; i++) {
+            if (i > 0 && blocks[i].kind === 'indicator' && blocks[i - 1]?.kind === 'action') {
+              groups.push(current);
+              current = [];
+            }
+            current.push(blocks[i]);
+          }
+          if (current.length > 0) groups.push(current);
+
+          return (
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="pipeline">
+                {(provided) => (
+                  <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-1.5">
+                    {groups.map((group, gi) => (
+                      <div key={gi}>
+                        {gi > 0 && (
+                          <div className="flex justify-center py-1">
                             <button
                               onClick={() => setCombineLogic((l) => l === 'and' ? 'or' : 'and')}
-                              className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#FF9933]/10 text-[#FF9933] hover:bg-[#FF9933]/20"
+                              className="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-[#FF9933]/10 text-[#FF9933] hover:bg-[#FF9933]/20 border border-[#FF9933]/20"
                             >
                               {combineLogic === 'and' ? 'AND' : 'OR'}
                             </button>
                           </div>
                         )}
-
-                        <BlockPill
-                          block={block}
-                          blocks={blocks}
-                          isExpanded={expandedBlockId === block.id}
-                          isDragging={snapshot.isDragging}
-                          isLight={isLight}
-                          dragHandleProps={dragProvided.dragHandleProps}
-                          onToggleExpand={() =>
-                            setExpandedBlockId((prev) =>
-                              prev === block.id ? null : block.id,
-                            )
-                          }
-                          onRemove={() => removeBlock(block.id)}
-                          onDuplicate={block.kind === 'indicator' ? () => duplicateBlock(block.id) : undefined}
-                          onUpdateIndicatorParam={(key, val) =>
-                            updateIndicatorParam(block.id, key, val)
-                          }
-                          onUpdateTrigger={(updates) =>
-                            updateTrigger(block.id, updates)
-                          }
-                          onUpdateAction={(dir) =>
-                            updateAction(block.id, dir)
-                          }
-                        />
+                        <div className="flex flex-wrap items-start gap-1">
+                          {group.map((block) => {
+                            const globalIndex = blocks.indexOf(block);
+                            return (
+                              <Draggable key={block.id} draggableId={block.id} index={globalIndex}>
+                                {(dragProvided, snapshot) => (
+                                  <div
+                                    ref={dragProvided.innerRef}
+                                    {...dragProvided.draggableProps}
+                                    className="flex items-start gap-1"
+                                  >
+                                    {globalIndex > 0 && !(blocks[globalIndex - 1]?.kind === 'action' && block.kind === 'indicator') && (
+                                      <span className={cn('text-[10px] self-center select-none', textMuted)}>→</span>
+                                    )}
+                                    <BlockPill
+                                      block={block}
+                                      blocks={blocks}
+                                      isExpanded={expandedBlockId === block.id}
+                                      isDragging={snapshot.isDragging}
+                                      isLight={isLight}
+                                      dragHandleProps={dragProvided.dragHandleProps}
+                                      onToggleExpand={() => setExpandedBlockId((prev) => prev === block.id ? null : block.id)}
+                                      onRemove={() => removeBlock(block.id)}
+                                      onDuplicate={block.kind === 'indicator' ? () => duplicateBlock(block.id) : undefined}
+                                      onUpdateIndicatorParam={(key, val) => updateIndicatorParam(block.id, key, val)}
+                                      onUpdateTrigger={(updates) => updateTrigger(block.id, updates)}
+                                      onUpdateAction={(dir) => updateAction(block.id, dir)}
+                                    />
+                                  </div>
+                                )}
+                              </Draggable>
+                            );
+                          })}
+                        </div>
                       </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          );
+        })()}
 
-        {/* Add buttons — inline row */}
+        {/* Add buttons */}
         <div className="flex items-center gap-1.5 mt-1.5">
           <button
             onClick={() => setShowAddModal(true)}
