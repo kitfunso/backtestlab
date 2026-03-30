@@ -453,6 +453,7 @@ export function StrategyBuilder({ stock, priceData, isLight, onClose }: Strategy
               indicator={ind}
               rules={rules.filter((r) => r.indicator_index === idx)}
               allRules={rules}
+              indicators={indicators}
               onUpdateParam={(key, val) => updateIndicatorParam(idx, key, val)}
               onRemove={() => removeIndicator(idx)}
               onAddRule={() => addRule(idx)}
@@ -565,23 +566,24 @@ function SizingItem({
   );
 }
 
-function describeRule(rule: SignalRule, indicator: IndicatorConfig): string {
-  const meta = INDICATOR_META[indicator.type];
-  const name = meta?.label ?? indicator.type;
-  const cond = rule.condition === 'crosses_above' ? 'crosses above'
-    : rule.condition === 'crosses_below' ? 'crosses below'
-    : rule.condition === 'is_above' ? 'is above'
-    : rule.condition === 'is_below' ? 'is below'
-    : 'is between';
-  const target = rule.threshold !== undefined ? rule.threshold : 'reference';
-  const dir = rule.direction === 'both' ? '→ long/short' : rule.direction === 'long' ? '→ go long' : '→ go short';
-  return `${name} ${cond} ${target} ${dir}`;
-}
+const CONDITION_OPTIONS: { value: SignalCondition; label: string; hint: string }[] = [
+  { value: 'crosses_above', label: 'Crosses above', hint: 'Signal fires once when value crosses up through the level' },
+  { value: 'crosses_below', label: 'Crosses below', hint: 'Signal fires once when value crosses down through the level' },
+  { value: 'is_above', label: 'Is above', hint: 'Signal is active every bar the value is above the level' },
+  { value: 'is_below', label: 'Is below', hint: 'Signal is active every bar the value is below the level' },
+];
+
+const DIRECTION_OPTIONS: { value: 'long' | 'short' | 'both'; label: string }[] = [
+  { value: 'both', label: 'Long & Short' },
+  { value: 'long', label: 'Long only' },
+  { value: 'short', label: 'Short only' },
+];
 
 function IndicatorCard({
   indicator,
   rules,
   allRules,
+  indicators,
   onUpdateParam,
   onRemove,
   onAddRule,
@@ -592,6 +594,7 @@ function IndicatorCard({
   indicator: IndicatorConfig;
   rules: SignalRule[];
   allRules: SignalRule[];
+  indicators: IndicatorConfig[];
   onUpdateParam: (key: string, value: number) => void;
   onRemove: () => void;
   onAddRule: () => void;
@@ -601,6 +604,18 @@ function IndicatorCard({
 }) {
   const meta = INDICATOR_META[indicator.type];
   const textMuted = isLight ? 'text-gray-400' : 'text-zinc-500';
+  const selectCls = cn(
+    'text-[11px] font-mono px-1.5 py-0.5 rounded border outline-none',
+    isLight
+      ? 'bg-white border-gray-200 text-gray-900 focus:border-[#FF9933]'
+      : 'bg-zinc-900 border-zinc-700 text-zinc-200 focus:border-[#FF9933]',
+  );
+  const inputCls = cn(
+    'w-16 px-1.5 py-0.5 rounded border text-[11px] font-mono text-center outline-none',
+    isLight
+      ? 'bg-white border-gray-200 text-gray-900 focus:border-[#FF9933]'
+      : 'bg-zinc-900 border-zinc-700 text-[#FF9933] focus:border-[#FF9933]',
+  );
 
   return (
     <div
@@ -610,7 +625,7 @@ function IndicatorCard({
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-1">
         <span className={cn('text-[13px] font-semibold font-[DM_Sans]', isLight ? 'text-gray-900' : 'text-zinc-100')}>
           {meta.label}
         </span>
@@ -621,6 +636,9 @@ function IndicatorCard({
           Remove
         </button>
       </div>
+
+      {/* Description */}
+      <div className={cn('text-[10px] mb-2 leading-snug', textMuted)}>{meta.desc}</div>
 
       {/* Parameters */}
       {meta.params.map((p) => (
@@ -646,22 +664,73 @@ function IndicatorCard({
         </div>
       ))}
 
-      {/* Signal rules — shown as human-readable description */}
+      {/* Signal rules — editable inline */}
+      {rules.length > 0 && (
+        <div className={cn('text-[10px] font-semibold uppercase tracking-wider mt-3 mb-1', textMuted)}>
+          Signal Rules
+        </div>
+      )}
       {rules.map((rule) => {
         const ruleIndex = allRules.indexOf(rule);
-        const ruleDesc = describeRule(rule, indicator);
+        const hasRef = rule.reference_indicator != null;
+        const refLabel = hasRef
+          ? INDICATOR_META[indicators[rule.reference_indicator!]?.type]?.label ?? `#${rule.reference_indicator}`
+          : null;
+
         return (
           <div
             key={ruleIndex}
-            className={cn('flex items-center gap-1.5 mt-2 text-[11px]', isLight ? 'text-gray-600' : 'text-zinc-400')}
+            className={cn(
+              'rounded border p-2 mt-1.5',
+              isLight ? 'bg-white border-gray-200' : 'bg-zinc-900/50 border-zinc-700',
+            )}
           >
-            <span className={cn('flex-1 italic', isLight ? 'text-gray-500' : 'text-zinc-400')}>{ruleDesc}</span>
-            <button
-              onClick={() => onRemoveRule(ruleIndex)}
-              className={cn('text-[10px] px-1', isLight ? 'text-gray-300 hover:text-red-500' : 'text-zinc-600 hover:text-red-400')}
-            >
-              ✕
-            </button>
+            {/* Row 1: Condition + Target */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className={cn('text-[10px]', textMuted)}>When</span>
+              <select
+                value={rule.condition}
+                onChange={(e) => onUpdateRule(ruleIndex, { condition: e.target.value as SignalCondition })}
+                className={selectCls}
+              >
+                {CONDITION_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+
+              {hasRef ? (
+                <span className={cn('text-[11px] font-mono', isLight ? 'text-gray-600' : 'text-zinc-300')}>
+                  {refLabel}
+                </span>
+              ) : (
+                <input
+                  type="number"
+                  value={rule.threshold ?? 0}
+                  onChange={(e) => onUpdateRule(ruleIndex, { threshold: Number(e.target.value) })}
+                  className={inputCls}
+                />
+              )}
+            </div>
+
+            {/* Row 2: Direction + Remove */}
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className={cn('text-[10px]', textMuted)}>Then</span>
+              <select
+                value={rule.direction}
+                onChange={(e) => onUpdateRule(ruleIndex, { direction: e.target.value as 'long' | 'short' | 'both' })}
+                className={selectCls}
+              >
+                {DIRECTION_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => onRemoveRule(ruleIndex)}
+                className={cn('ml-auto text-[10px] px-1', isLight ? 'text-gray-300 hover:text-red-500' : 'text-zinc-600 hover:text-red-400')}
+              >
+                Remove rule
+              </button>
+            </div>
           </div>
         );
       })}
@@ -717,15 +786,19 @@ function AddIndicatorDropdown({
                 <button
                   key={type}
                   onClick={() => onSelect(type)}
-                  title={meta.desc}
                   className={cn(
-                    'w-full text-left px-3 py-1.5 text-xs transition-colors',
+                    'w-full text-left px-3 py-2 transition-colors group',
                     isLight
-                      ? 'text-gray-700 hover:bg-gray-50 hover:text-[#FF9933]'
-                      : 'text-zinc-300 hover:bg-zinc-800 hover:text-[#FF9933]',
+                      ? 'text-gray-700 hover:bg-[#FF9933]/5'
+                      : 'text-zinc-300 hover:bg-[#FF9933]/10',
                   )}
                 >
-                  {meta.label}
+                  <div className={cn('text-xs font-medium', isLight ? 'group-hover:text-[#FF9933]' : 'group-hover:text-[#FF9933]')}>
+                    {meta.label}
+                  </div>
+                  <div className={cn('text-[10px] leading-snug mt-0.5', isLight ? 'text-gray-400' : 'text-zinc-500')}>
+                    {meta.desc}
+                  </div>
                 </button>
               ))}
             </div>
