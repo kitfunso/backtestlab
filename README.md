@@ -24,7 +24,8 @@ npm run build    # static export → out/
 
 - **Strategy tester** — pick an NSE stock or MCX commodity, compose an indicator/trigger/action pipeline, backtest over ~1 year of history.
 - **Portfolio builder** — pick up to 12 instruments, run an optimizer (equal-weight, risk-parity, min-variance, max-Sharpe, max-diversification), see portfolio-level metrics: rolling Sharpe/vol, top-5 drawdowns, return distribution, Sortino, Calmar, diversification ratio.
-- **MCX commodities** — Gold, Silver, Copper, Crude, MCX iCOMDEX Bullion, MCX iCOMDEX Base Metal. Backfilled history for the 4 singles via yfinance surrogates; indices forward-only from MCX bhavcopy.
+- **MCX commodities** — Gold, Silver, Copper, Crude, MCX iCOMDEX Bullion, MCX iCOMDEX Base Metal. Real rupee-denominated OHLCV from MCX bhavcopy via [mcxpy](https://pypi.org/project/mcxpy/): singles back to 2017-09 (~2,200 days), indices back to their 2020 launch. Daily refresh via GitHub Actions.
+- **Transaction costs** — exchange-published fee schedule (brokerage, exchange turnover, STT/CTT, stamp duty, GST) plus a size-dependent slippage curve. Costs are charged only when position changes (entry, exit, direction flip, resize) — not on passive holds.
 
 ## Structure
 
@@ -49,8 +50,9 @@ public/india/
     └── mcx/{SYMBOL}.json      # MCX per-commodity OHLCV
 
 scripts/
-├── ingest_mcx.py              # daily MCX bhavcopy refresh (runs in GitHub Actions)
-├── backfill_mcx.py            # one-shot historical backfill via yfinance surrogates
+├── ingest_mcx.py                # daily MCX bhavcopy refresh (runs in GitHub Actions)
+├── backfill_mcx_bhavcopy.py     # historical backfill via mcxpy (real INR OHLCV)
+├── backfill_mcx.py              # yfinance surrogate fallback (deprecated)
 └── requirements.txt
 
 docs/
@@ -64,7 +66,7 @@ docs/
 - **[PRD](docs/PRD.md)** — what the product is and explicitly is not
 - **[Architecture](docs/ARCHITECTURE.md)** — folder layout, data flow, service boundaries
 - **[CLAUDE.md](CLAUDE.md)** — non-negotiable rules for AI sessions working on this repo
-- **[Sprint 1 plan](docs/plans/2026-04-20-sprint-1.md)** — what shipped in v0.2.0
+- **[Sprint 1 plan](docs/plans/2026-04-20-sprint-1.md)** — what shipped in v0.2.x (MCX commodities + portfolio metrics + real bhavcopy data + transaction-cost model)
 
 ## Compliance
 
