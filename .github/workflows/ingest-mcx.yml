@@ -36,10 +36,13 @@ jobs:
       - name: Run MCX bhavcopy ingest
         run: python scripts/ingest_mcx.py
 
+      - name: Refresh prices summary
+        run: python scripts/build_prices_summary.py
+
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet public/india/prices/mcx/; then
+          if git diff --quiet public/india/prices/mcx/ public/india/prices-summary.json; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
@@ -50,6 +53,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/india/prices/mcx/
-          git commit -m "data(mcx): daily bhavcopy $(date -u +%Y-%m-%d)"
+          git add public/india/prices/mcx/ public/india/prices-summary.json
+          git commit -m "data(mcx+prices): daily $(date -u +%Y-%m-%d)"
           git push
