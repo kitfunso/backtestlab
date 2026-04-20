@@ -22,6 +22,10 @@ import { CommodityGrid } from '@/components/mcx/CommodityGrid';
 import { usePortfolioOptimisation } from '@/lib/india/portfolio-hooks';
 import type { AllocMethod as OptiAllocMethod } from '@/lib/india/optimizer';
 import { PortfolioMetricsPanel } from '@/components/portfolio/PortfolioMetricsPanel';
+import { GoalWizard } from '@/components/portfolio/GoalWizard';
+import { SavedPortfoliosPanel } from '@/components/portfolio/SavedPortfoliosPanel';
+import type { SavedPortfolio } from '@/lib/portfolio/storage';
+import { NewsPanel } from '@/components/india/NewsPanel';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
   ScatterChart, Scatter, Cell,
@@ -54,6 +58,37 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('strategy');
   const [search, setSearch] = useState('');
   const [portfolioCapital, setPortfolioCapital] = useState(5000000); // ₹50L default
+  const [showWizard, setShowWizard] = useState(false);
+
+  const replacePortfolioTickers = useCallback((tickers: string[]) => {
+    setPortfolio(new Set(tickers));
+    setViewMode('portfolio');
+  }, []);
+
+  const sectorsByTicker = useMemo<Record<string, string>>(() => {
+    const out: Record<string, string> = {};
+    for (const s of getAllStocks()) out[s.ticker] = s.sector;
+    return out;
+  }, []);
+
+  const namesByTicker = useMemo<Record<string, string>>(() => {
+    const out: Record<string, string> = {};
+    for (const s of getAllStocks()) out[s.ticker] = s.name;
+    return out;
+  }, []);
+
+  const currentPortfolioSpec = useMemo(() => {
+    if (portfolio.size === 0) return null;
+    const tickers = Array.from(portfolio);
+    return { tickers, weights: tickers.map(() => 1 / tickers.length), strategy: null as unknown };
+  }, [portfolio]);
+
+  const handleLoadSaved = useCallback(
+    (spec: SavedPortfolio) => {
+      replacePortfolioTickers([...spec.tickers]);
+    },
+    [replacePortfolioTickers],
+  );
 
   const sectorCounts = useMemo(() => getSectorCounts(), []);
 
@@ -302,6 +337,9 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
             isLight={isLight}
             onClose={() => { setSelectedTicker(null); setSelectedPriceData(null); }}
           />
+
+          {/* News feed — filtered to selected ticker or general when none */}
+          <NewsPanel ticker={selectedTicker} isLight={isLight} />
         </>
       )}
 
@@ -314,6 +352,20 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
           onRemove={(ticker) => setPortfolio((prev) => { const n = new Set(prev); n.delete(ticker); return n; })}
           onSelectStock={handleSelectStock}
           isLight={isLight}
+          onOpenWizard={() => setShowWizard(true)}
+          currentPortfolioSpec={currentPortfolioSpec}
+          onLoadSaved={handleLoadSaved}
+        />
+      )}
+
+      {/* ===== GOAL WIZARD (modal) ===== */}
+      {showWizard && (
+        <GoalWizard
+          isLight={isLight}
+          sectors={sectorsByTicker}
+          names={namesByTicker}
+          onApply={replacePortfolioTickers}
+          onClose={() => setShowWizard(false)}
         />
       )}
     </div>
@@ -450,6 +502,9 @@ function PortfolioView({
   onRemove,
   onSelectStock,
   isLight,
+  onOpenWizard,
+  currentPortfolioSpec,
+  onLoadSaved,
 }: {
   stocks: IndiaStock[];
   portfolio: Set<string>;
@@ -457,6 +512,9 @@ function PortfolioView({
   onRemove: (ticker: string) => void;
   onSelectStock: (ticker: string) => void;
   isLight: boolean;
+  onOpenWizard: () => void;
+  currentPortfolioSpec: { tickers: string[]; weights: number[]; strategy: unknown } | null;
+  onLoadSaved: (spec: SavedPortfolio) => void;
 }) {
   const [allocMethod, setAllocMethod] = useState<AllocMethod>('equal');
   const [prices, setPrices] = useState<Record<string, number>>({});
@@ -570,22 +628,60 @@ function PortfolioView({
 
   if (stocks.length === 0) {
     return (
-      <div className={cn(
-        'rounded-xl border p-8 text-center',
-        isLight ? 'bg-white border-gray-200' : 'bg-zinc-900/30 border-zinc-800',
-      )}>
-        <div className={cn('text-lg font-semibold mb-2', isLight ? 'text-gray-900' : 'text-zinc-100')}>
-          No stocks in portfolio
+      <div className="space-y-3">
+        <div className={cn(
+          'rounded-xl border p-8 text-center',
+          isLight ? 'bg-white border-gray-200' : 'bg-zinc-900/30 border-zinc-800',
+        )}>
+          <div className={cn('text-lg font-semibold mb-2', isLight ? 'text-gray-900' : 'text-zinc-100')}>
+            No stocks in portfolio
+          </div>
+          <div className={cn('text-sm mb-3', textMuted)}>
+            Switch to Strategy view, browse stocks, and click the ☆ icon to add stocks — or let the wizard pick for you.
+          </div>
+          <button
+            onClick={onOpenWizard}
+            className="px-3 py-1.5 rounded text-sm bg-indigo-600 hover:bg-indigo-500 text-white"
+          >
+            Open goal wizard
+          </button>
         </div>
-        <div className={cn('text-sm', textMuted)}>
-          Switch to Strategy view, browse stocks, and click the ☆ icon to add stocks to your portfolio.
-        </div>
+        <SavedPortfoliosPanel
+          currentPortfolio={currentPortfolioSpec}
+          onLoad={onLoadSaved}
+          isLight={isLight}
+        />
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
+      {/* Wizard + saved portfolios toolbar */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <button
+          onClick={onOpenWizard}
+          className={cn(
+            'rounded-xl border p-3 text-left transition-colors',
+            isLight ? 'bg-white border-gray-200 hover:border-indigo-400' : 'bg-zinc-900/30 border-zinc-800 hover:border-indigo-500',
+          )}
+        >
+          <div className={cn('text-[10px] uppercase tracking-wider font-semibold', textMuted)}>
+            Goal wizard
+          </div>
+          <div className={cn('text-sm font-medium mt-0.5', isLight ? 'text-gray-900' : 'text-zinc-100')}>
+            Replace with factor-ranked picks →
+          </div>
+        </button>
+        <div className="lg:col-span-2">
+          <SavedPortfoliosPanel
+            currentPortfolio={currentPortfolioSpec}
+            onLoad={onLoadSaved}
+            isLight={isLight}
+          />
+        </div>
+      </div>
+
       {/* Allocation method selector */}
       <div className={cn(
         'rounded-xl border p-3',
