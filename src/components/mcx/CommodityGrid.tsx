@@ -10,12 +10,14 @@
 
 import { cn } from '@/lib/utils';
 import type { MCXCommodity } from '@/lib/mcx/types';
+import type { PriceSummary } from '@/lib/india/prices-summary';
 
 interface CommodityGridProps {
   readonly commodities: readonly MCXCommodity[];
   readonly selectedSymbol: string | null;
   readonly onSelect: (symbol: string) => void;
   readonly isLight: boolean;
+  readonly prices: Record<string, PriceSummary> | null;
 }
 
 export function CommodityGrid({
@@ -23,6 +25,7 @@ export function CommodityGrid({
   selectedSymbol,
   onSelect,
   isLight,
+  prices,
 }: CommodityGridProps) {
   const textMuted = isLight ? 'text-gray-500' : 'text-zinc-400';
 
@@ -39,6 +42,7 @@ export function CommodityGrid({
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-1.5 p-2">
         {commodities.map((c) => {
           const isSelected = selectedSymbol === c.symbol;
+          const px = prices?.[c.symbol] ?? null;
           return (
             <div
               key={c.symbol}
@@ -52,10 +56,24 @@ export function CommodityGrid({
                     : 'bg-zinc-900/40 border-zinc-800/60 hover:border-zinc-600',
               )}
             >
-              {/* Kind badge */}
+              {/* 1Y return — top right */}
               <div
                 className={cn(
-                  'absolute top-1.5 right-2 text-[9px] font-mono uppercase tracking-wider',
+                  'absolute top-1.5 right-2 text-[10px] font-mono font-semibold',
+                  px?.yr1_pct == null
+                    ? textMuted
+                    : px.yr1_pct >= 0
+                      ? 'text-emerald-500'
+                      : 'text-red-500',
+                )}
+              >
+                {px?.yr1_pct == null ? '--' : `${px.yr1_pct >= 0 ? '+' : ''}${(px.yr1_pct * 100).toFixed(0)}%`}
+              </div>
+
+              {/* Kind badge — below the 1Y chip */}
+              <div
+                className={cn(
+                  'absolute top-5 right-2 text-[8px] font-mono uppercase tracking-wider',
                   c.kind === 'index' ? 'text-cyan-400' : 'text-[#FF9933]',
                 )}
               >
@@ -72,17 +90,17 @@ export function CommodityGrid({
                 {c.name}
               </div>
 
-              {/* Metrics row: lot / contract / tick */}
+              {/* Metrics row: price / lot / tick */}
               <div className="flex items-center gap-2 mt-1.5">
+                <div>
+                  <div className={cn('text-[7px] uppercase tracking-wider', textMuted)}>Price</div>
+                  <div className={cn('text-[10px] font-mono', isLight ? 'text-gray-700' : 'text-zinc-300')}>
+                    {px ? (px.close >= 1e5 ? `₹${(px.close / 1e5).toFixed(2)}L` : `₹${px.close.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`) : '--'}
+                  </div>
+                </div>
                 <div>
                   <div className={cn('text-[7px] uppercase tracking-wider', textMuted)}>Lot</div>
                   <div className={cn('text-[10px] font-mono', isLight ? 'text-gray-600' : 'text-zinc-400')}>{c.lot_size}</div>
-                </div>
-                <div>
-                  <div className={cn('text-[7px] uppercase tracking-wider', textMuted)}>Size</div>
-                  <div className={cn('text-[10px] font-mono truncate max-w-[52px]', isLight ? 'text-gray-600' : 'text-zinc-400')} title={c.contract_size}>
-                    {c.contract_size}
-                  </div>
                 </div>
                 <div>
                   <div className={cn('text-[7px] uppercase tracking-wider', textMuted)}>Tick</div>

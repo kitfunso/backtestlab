@@ -14,6 +14,7 @@ import {
   getSectorCounts,
 } from '@/lib/india/registry';
 import { fetchPriceData } from '@/lib/india/data';
+import { usePricesSummary, type PriceSummary } from '@/lib/india/prices-summary';
 import { StrategyBuilder } from './StrategyBuilder';
 import registryJson from '../../../public/india/registry.json';
 import mcxRegistryJson from '../../../public/india/mcx-registry.json';
@@ -60,6 +61,8 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
   const [search, setSearch] = useState('');
   const [portfolioCapital, setPortfolioCapital] = useState(5000000); // ₹50L default
   const [showWizard, setShowWizard] = useState(false);
+
+  const pricesSummary = usePricesSummary();
 
   const replacePortfolioTickers = useCallback((tickers: string[]) => {
     setPortfolio(new Set(tickers));
@@ -247,8 +250,14 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
       {/* ===== STRATEGY VIEW ===== */}
       {viewMode === 'strategy' && (
         <>
-          {/* Sector tabs */}
-          <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-0.5">
+          {/* Sector tabs — right-edge fade hints at horizontal overflow on mobile */}
+          <div
+            className="flex gap-1 overflow-x-auto scrollbar-hide pb-0.5"
+            style={{
+              maskImage: 'linear-gradient(to right, black calc(100% - 24px), transparent)',
+              WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 24px), transparent)',
+            }}
+          >
             {SECTOR_ORDER.map((sector) => {
               const active = activeSector === sector;
               const color = SECTOR_COLORS[sector];
@@ -318,6 +327,7 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
                 selectedSymbol={selectedTicker}
                 onSelect={handleSelectStock}
                 isLight={isLight}
+                prices={pricesSummary?.mcx ?? null}
               />
             ) : (
               <StockGrid
@@ -327,6 +337,7 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
                 onSelect={handleSelectStock}
                 onTogglePortfolio={handleTogglePortfolio}
                 isLight={isLight}
+                prices={pricesSummary?.stocks ?? null}
               />
             )}
           </div>
@@ -384,6 +395,7 @@ function StockGrid({
   onSelect,
   onTogglePortfolio,
   isLight,
+  prices,
 }: {
   stocks: readonly IndiaStock[];
   selectedTicker: string | null;
@@ -391,6 +403,7 @@ function StockGrid({
   onSelect: (ticker: string) => void;
   onTogglePortfolio: (ticker: string, e: React.MouseEvent) => void;
   isLight: boolean;
+  prices: Record<string, PriceSummary> | null;
 }) {
   const textMuted = isLight ? 'text-gray-500' : 'text-zinc-400';
 
@@ -408,6 +421,7 @@ function StockGrid({
         {stocks.map((stock) => {
           const inPortfolio = portfolio.has(stock.ticker);
           const isSelected = selectedTicker === stock.ticker;
+          const px = prices?.[stock.ticker] ?? null;
 
           return (
             <div
@@ -428,9 +442,18 @@ function StockGrid({
                       : 'bg-zinc-900/40 border-zinc-800/60 hover:border-zinc-600',
               )}
             >
-              {/* Sharpe — top right */}
-              <div className="absolute top-1.5 right-2 text-[10px] font-mono font-semibold text-[#FF9933]">
-                --
+              {/* 1Y return — top right */}
+              <div
+                className={cn(
+                  'absolute top-1.5 right-2 text-[10px] font-mono font-semibold',
+                  px?.yr1_pct == null
+                    ? textMuted
+                    : px.yr1_pct >= 0
+                      ? 'text-emerald-500'
+                      : 'text-red-500',
+                )}
+              >
+                {px?.yr1_pct == null ? '--' : `${px.yr1_pct >= 0 ? '+' : ''}${(px.yr1_pct * 100).toFixed(0)}%`}
               </div>
 
               {/* Portfolio star */}
@@ -465,11 +488,15 @@ function StockGrid({
                 </div>
                 <div>
                   <div className={cn('text-[7px] uppercase tracking-wider', isLight ? 'text-gray-500' : 'text-zinc-400')}>Price</div>
-                  <div className={cn('text-[10px] font-mono', isLight ? 'text-gray-600' : 'text-zinc-400')}>--</div>
+                  <div className={cn('text-[10px] font-mono', isLight ? 'text-gray-700' : 'text-zinc-300')}>
+                    {px ? (px.close >= 1000 ? `₹${px.close.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : `₹${px.close.toFixed(2)}`) : '--'}
+                  </div>
                 </div>
                 <div>
-                  <div className={cn('text-[7px] uppercase tracking-wider', isLight ? 'text-gray-500' : 'text-zinc-400')}>1Y</div>
-                  <div className={cn('text-[10px] font-mono', isLight ? 'text-gray-600' : 'text-zinc-400')}>--</div>
+                  <div className={cn('text-[7px] uppercase tracking-wider', isLight ? 'text-gray-500' : 'text-zinc-400')}>Notional</div>
+                  <div className={cn('text-[10px] font-mono', isLight ? 'text-gray-600' : 'text-zinc-400')}>
+                    {px ? (() => { const n = px.close * stock.lot_size; return n >= 1e5 ? `₹${(n / 1e5).toFixed(1)}L` : `₹${(n / 1000).toFixed(0)}k`; })() : '--'}
+                  </div>
                 </div>
               </div>
             </div>

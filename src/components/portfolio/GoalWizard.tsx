@@ -80,10 +80,10 @@ export function GoalWizard({ isLight, sectors, names, onApply, onClose }: Wizard
     return selectTopN(scores, sectors, size, 3);
   }, [factorsFile, preset, size, sectors]);
 
-  const driversByTicker = useMemo<Record<string, Array<{ factor: FactorName; contribution: number }>>>(() => {
+  const driversByTicker = useMemo<Record<string, Array<{ factor: FactorName; contribution: number; rawZ: number }>>>(() => {
     if (!factorsFile) return {};
     const weights = getPresetWeights(preset);
-    const out: Record<string, Array<{ factor: FactorName; contribution: number }>> = {};
+    const out: Record<string, Array<{ factor: FactorName; contribution: number; rawZ: number }>> = {};
     for (const t of picks) {
       out[t] = factorContributions(factorsFile.factors, weights, t).slice(0, 2);
     }
@@ -236,13 +236,32 @@ export function GoalWizard({ isLight, sectors, names, onApply, onClose }: Wizard
           <div className="flex items-center justify-between mb-2">
             <div className="text-sm font-medium">Picks ({picks.length})</div>
             <button
-              className={`px-3 py-1.5 rounded text-sm ${btnPrimary} disabled:opacity-40`}
+              className={`px-3 py-1.5 rounded text-sm ${btnPrimary} disabled:opacity-40 disabled:cursor-not-allowed`}
               disabled={picks.length === 0}
               onClick={handleApply}
             >
               Add to portfolio
             </button>
           </div>
+          {!factorsFile && !factorsError && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
+              {Array.from({ length: size }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`rounded border px-2.5 py-1.5 ${chip} animate-pulse`}
+                >
+                  <div className={`h-3 w-16 rounded ${isLight ? 'bg-gray-200' : 'bg-zinc-700'} mb-1`} />
+                  <div className={`h-2 w-24 rounded ${isLight ? 'bg-gray-200' : 'bg-zinc-700'} mb-1`} />
+                  <div className={`h-2 w-12 rounded ${isLight ? 'bg-gray-200' : 'bg-zinc-700'}`} />
+                </div>
+              ))}
+            </div>
+          )}
+          {factorsError && (
+            <div className="py-4 text-center text-sm text-red-500">
+              Could not load factor scores: {factorsError}
+            </div>
+          )}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
             {picks.map((t) => {
               const drivers = driversByTicker[t] ?? [];
@@ -254,7 +273,7 @@ export function GoalWizard({ isLight, sectors, names, onApply, onClose }: Wizard
                   {drivers.length > 0 && (
                     <div className={`text-[10px] mt-0.5 ${mutedText}`}>
                       {drivers
-                        .map((d) => `${FACTOR_LABELS[d.factor]} ${d.contribution >= 0 ? '▲' : '▼'}`)
+                        .map((d) => `${FACTOR_LABELS[d.factor]} ${d.rawZ >= 0 ? '▲' : '▼'}`)
                         .join(' • ')}
                     </div>
                   )}

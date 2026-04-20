@@ -104,15 +104,19 @@ export function compositeScore(
 
 /**
  * Compute per-factor contributions to the composite score for a single ticker.
- * Contribution = weight * direction * z. Useful for explaining why a pick ranks high.
+ * Returns both the contribution magnitude (for ranking drivers) and the raw
+ * factor z-score (for the UI arrow — ▲ = stock scores high on raw factor,
+ * ▼ = stock scores low). The contribution can be positive via the contrarian
+ * path (negative weight × negative z), but the arrow should reflect where
+ * the stock actually sits on the factor so the label reads intuitively.
  */
 export function factorContributions(
   universe: FactorUniverse,
   weights: FactorWeights,
   ticker: string,
-): Array<{ factor: FactorName; contribution: number }> {
+): Array<{ factor: FactorName; contribution: number; rawZ: number }> {
   const tickers = Object.keys(universe);
-  const out: Array<{ factor: FactorName; contribution: number }> = [];
+  const out: Array<{ factor: FactorName; contribution: number; rawZ: number }> = [];
   for (const f of ALL_FACTORS) {
     const w = weights[f];
     if (w === undefined || w === 0) continue;
@@ -122,7 +126,11 @@ export function factorContributions(
       rawByTicker[t] = v === undefined ? null : v;
     }
     const z = crossSectionalZScore(rawByTicker)[ticker] ?? 0;
-    out.push({ factor: f, contribution: w * FACTOR_DIRECTION[f] * z });
+    out.push({
+      factor: f,
+      contribution: w * FACTOR_DIRECTION[f] * z,
+      rawZ: z,
+    });
   }
   out.sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution));
   return out;
