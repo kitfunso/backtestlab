@@ -10,6 +10,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { BacktestResult, PriceData, StrategyConfig } from './types';
 import { runBacktest } from './backtest-engine';
+import { detectInstrumentClass } from '@/lib/portfolio/transaction-costs';
 
 interface UseBacktestOptions {
   ticker: string;
@@ -41,7 +42,7 @@ export function useBacktest({
   const abortRef = useRef(0);
 
   const runEngine = useCallback(
-    (prices: PriceData, cfg: StrategyConfig, lot: number) => {
+    (prices: PriceData, cfg: StrategyConfig, lot: number, tkr: string) => {
       const id = ++abortRef.current;
       setIsLoading(true);
       setError(null);
@@ -50,7 +51,7 @@ export function useBacktest({
       setTimeout(() => {
         if (abortRef.current !== id) return; // stale
         try {
-          const res = runBacktest(prices, cfg, lot);
+          const res = runBacktest(prices, cfg, lot, detectInstrumentClass(tkr));
           if (abortRef.current === id) {
             setResult(res);
             setIsLoading(false);
@@ -77,7 +78,7 @@ export function useBacktest({
     // Debounce: 300ms
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      runEngine(priceData, config, lotSize);
+      runEngine(priceData, config, lotSize, ticker);
     }, 300);
 
     return () => {

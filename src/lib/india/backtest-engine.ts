@@ -18,6 +18,10 @@ import type {
 } from './types';
 
 import * as ind from './indicators';
+import {
+  computeTradeCosts,
+  type InstrumentClass,
+} from '@/lib/portfolio/transaction-costs';
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -27,6 +31,7 @@ export function runBacktest(
   prices: PriceData,
   config: StrategyConfig,
   lotSize: number,
+  instrumentClass: InstrumentClass = 'NSE_FO_STOCK',
 ): BacktestResult {
   const n = prices.close.length;
   if (n < 2) return emptyResult();
@@ -43,20 +48,34 @@ export function runBacktest(
   // 4. Position sizing
   const lots = computeLots(prices.close as number[], signals, config.sizing, lotSize);
 
-  // 5. Compute daily PnL (signal lagged by 1 day: trade on next bar)
-  const dailyPnl = computeDailyPnl(prices.close as number[], signals, lots, lotSize);
+  // 5. Compute daily gross PnL (signal lagged by 1 day: trade on next bar)
+  const grossPnl = computeDailyPnl(prices.close as number[], signals, lots, lotSize);
 
-  // 6. Build trade log
+  // 6. Transaction costs — charged only on position changes
+  const tradeCosts = computeTradeCosts(
+    prices.close as number[],
+    signals,
+    lots,
+    lotSize,
+    instrumentClass,
+  );
+
+  // 7. Net PnL = gross - costs
+  const dailyPnl = grossPnl.map((p, i) => p - (tradeCosts[i] ?? 0));
+  const totalCosts = tradeCosts.reduce((a, b) => a + b, 0);
+
+  // 8. Build trade log
   const trades = buildTradeLog(prices, signals, lots, lotSize);
 
-  // 7. Compute metrics
+  // 9. Compute metrics (on net PnL)
   const metrics = computeMetrics(dailyPnl, trades, prices.dates as string[]);
+  metrics.total_transaction_costs = round2(totalCosts);
 
-  // 8. Build equity curve and drawdown
+  // 10. Build equity curve and drawdown (net)
   const equityCurve = buildEquityCurve(dailyPnl, prices.dates as string[]);
   const drawdown = buildDrawdown(equityCurve.cumulative);
 
-  // 9. Monthly and yearly aggregation
+  // 11. Monthly and yearly aggregation (net)
   const monthly = aggregateMonthly(dailyPnl, prices.dates as string[]);
   const yearly = aggregateYearly(dailyPnl, prices.dates as string[]);
 

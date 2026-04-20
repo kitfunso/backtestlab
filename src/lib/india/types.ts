@@ -179,6 +179,7 @@ export interface BacktestMetrics {
   readonly max_consec_losses: number;
   readonly gross_profit: number;
   readonly gross_loss: number;
+  total_transaction_costs?: number;
 }
 
 export interface Trade {

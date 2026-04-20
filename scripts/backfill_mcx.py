@@ -69,8 +69,8 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--period",
         type=str,
-        default="1y",
-        help="yfinance period string (e.g. 1y, 2y, 5y). Default: 1y",
+        default="max",
+        help="yfinance period string (e.g. 1y, 5y, max). Default: max",
     )
     return parser.parse_args(argv)
 
