@@ -17,8 +17,8 @@ describe('presets', () => {
     expect(Math.abs(sum)).toBeLessThan(1.0);
   });
 
-  it('listPresets returns all 4', () => {
-    expect(listPresets().sort()).toEqual(['balanced', 'contrarian', 'defensive', 'growth']);
+  it('listPresets returns all named goals', () => {
+    expect(listPresets().length).toBeGreaterThanOrEqual(4);
   });
 });
 

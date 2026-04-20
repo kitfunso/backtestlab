@@ -7,7 +7,12 @@ export type FactorName =
   | 'low_vol'
   | 'short_rev'
   | 'low_beta'
-  | 'low_disp';
+  | 'low_disp'
+  | 'pe'
+  | 'pb'
+  | 'roe'
+  | 'rev_growth'
+  | 'de';
 
 export type FactorScores = Partial<Record<FactorName, number>>;
 
@@ -25,6 +30,11 @@ const FACTOR_DIRECTION: Record<FactorName, 1 | -1> = {
   short_rev: -1,
   low_beta: -1,
   low_disp: -1,
+  pe: -1,
+  pb: -1,
+  roe: 1,
+  rev_growth: 1,
+  de: -1,
 };
 
 const ALL_FACTORS: FactorName[] = [
@@ -34,7 +44,26 @@ const ALL_FACTORS: FactorName[] = [
   'short_rev',
   'low_beta',
   'low_disp',
+  'pe',
+  'pb',
+  'roe',
+  'rev_growth',
+  'de',
 ];
+
+export const FACTOR_LABELS: Record<FactorName, string> = {
+  mom12_1: '12-1 momentum',
+  mom6_1: '6-1 momentum',
+  low_vol: 'Low volatility',
+  short_rev: 'Short reversal',
+  low_beta: 'Low beta',
+  low_disp: 'Low dispersion',
+  pe: 'Low P/E',
+  pb: 'Low P/B',
+  roe: 'ROE',
+  rev_growth: 'Revenue growth',
+  de: 'Low debt/equity',
+};
 
 /**
  * Collapse per-factor z-scores into a single composite per ticker.
@@ -71,6 +100,32 @@ export function compositeScore(
     composite[t] = s;
   }
   return composite;
+}
+
+/**
+ * Compute per-factor contributions to the composite score for a single ticker.
+ * Contribution = weight * direction * z. Useful for explaining why a pick ranks high.
+ */
+export function factorContributions(
+  universe: FactorUniverse,
+  weights: FactorWeights,
+  ticker: string,
+): Array<{ factor: FactorName; contribution: number }> {
+  const tickers = Object.keys(universe);
+  const out: Array<{ factor: FactorName; contribution: number }> = [];
+  for (const f of ALL_FACTORS) {
+    const w = weights[f];
+    if (w === undefined || w === 0) continue;
+    const rawByTicker: Record<string, number | null> = {};
+    for (const t of tickers) {
+      const v = universe[t]?.[f];
+      rawByTicker[t] = v === undefined ? null : v;
+    }
+    const z = crossSectionalZScore(rawByTicker)[ticker] ?? 0;
+    out.push({ factor: f, contribution: w * FACTOR_DIRECTION[f] * z });
+  }
+  out.sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution));
+  return out;
 }
 
 /**

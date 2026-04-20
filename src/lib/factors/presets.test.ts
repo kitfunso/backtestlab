@@ -19,4 +19,19 @@ describe('presets metadata', () => {
     const b = getPresetWeights('growth');
     expect(b.mom12_1).not.toBe(999);
   });
+
+  it('listPresets includes all 5 named goals including value', () => {
+    expect(listPresets().sort()).toEqual([
+      'balanced',
+      'contrarian',
+      'defensive',
+      'growth',
+      'value',
+    ]);
+  });
+
+  it('value preset has strong load on pe, pb, roe, de', () => {
+    const w = getPresetWeights('value');
+    expect((w.pe ?? 0) + (w.pb ?? 0) + (w.roe ?? 0) + (w.de ?? 0)).toBeGreaterThan(0.7);
+  });
 });
