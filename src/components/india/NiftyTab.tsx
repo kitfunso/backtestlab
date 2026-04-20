@@ -22,6 +22,7 @@ import { CommodityGrid } from '@/components/mcx/CommodityGrid';
 import { usePortfolioOptimisation } from '@/lib/india/portfolio-hooks';
 import type { AllocMethod as OptiAllocMethod } from '@/lib/india/optimizer';
 import { PortfolioMetricsPanel } from '@/components/portfolio/PortfolioMetricsPanel';
+import { DCAPanel } from '@/components/portfolio/DCAPanel';
 import { GoalWizard } from '@/components/portfolio/GoalWizard';
 import { SavedPortfoliosPanel } from '@/components/portfolio/SavedPortfoliosPanel';
 import type { SavedPortfolio } from '@/lib/portfolio/storage';
@@ -930,6 +931,14 @@ function PortfolioView({
           perAssetReturns={metricsData.perAssetReturns}
           weights={metricsData.weights}
           assetNames={metricsData.assetNames}
+          isLight={isLight}
+        />
+      )}
+      {metricsData && (
+        <DCAPanel
+          equityCurve={metricsData.portfolioEquityCurve}
+          dates={metricsData.dates}
+          capital={capital}
           isLight={isLight}
         />
       )}
