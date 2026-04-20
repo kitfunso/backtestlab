@@ -11,6 +11,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "clsx": "^2.1.0",
     "lucide-react": "^0.303.0",
     "next": "^14.2.15",
