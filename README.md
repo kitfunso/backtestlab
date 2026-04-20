@@ -24,6 +24,9 @@ npm run build    # static export → out/
 
 - **Strategy tester** — pick an NSE stock or MCX commodity, compose an indicator/trigger/action pipeline, backtest over ~1 year of history.
 - **Portfolio builder** — pick up to 12 instruments, run an optimizer (equal-weight, risk-parity, min-variance, max-Sharpe, max-diversification), see portfolio-level metrics: rolling Sharpe/vol, top-5 drawdowns, return distribution, Sortino, Calmar, diversification ratio.
+- **Goal-based wizard** — pick a goal (growth / balanced / defensive / contrarian), horizon, size. Wizard ranks all 204 NSE names on 6 price factors (momentum 12-1 / 6-1, short reversal, volatility, downside beta, dispersion) and picks the top-N with a 3-per-sector cap.
+- **Saved portfolios** — name a portfolio, reopen it later. Stored in browser localStorage (20-slot cap); cross-device sync arrives with accounts in Sprint 3.
+- **News feed** — stock-tagged headlines from ET Markets, Moneycontrol, and Google News. 10-minute GitHub Actions refresh during IST market hours; client re-polls every 10 min.
 - **MCX commodities** — Gold, Silver, Copper, Crude, MCX iCOMDEX Bullion, MCX iCOMDEX Base Metal. Real rupee-denominated OHLCV from MCX bhavcopy via [mcxpy](https://pypi.org/project/mcxpy/): singles back to 2017-09 (~2,200 days), indices back to their 2020 launch. Daily refresh via GitHub Actions.
 - **Transaction costs** — exchange-published fee schedule (brokerage, exchange turnover, STT/CTT, stamp duty, GST) plus a size-dependent slippage curve. Costs are charged only when position changes (entry, exit, direction flip, resize) — not on passive holds.
 
@@ -33,18 +36,21 @@ npm run build    # static export → out/
 src/
 ├── app/                       # Next.js app router (layout, root page)
 ├── components/
-│   ├── india/                 # NSE UI (NiftyTab, StrategyBuilder, ResultsPanel)
+│   ├── india/                 # NSE UI (NiftyTab, StrategyBuilder, NewsPanel)
 │   ├── mcx/                   # MCX commodity selector + grid
-│   └── portfolio/             # PortfolioMetricsPanel
+│   └── portfolio/             # PortfolioMetricsPanel, GoalWizard, SavedPortfoliosPanel
 └── lib/
     ├── india/                 # NSE strategy engine: indicators, backtest, optimizer, registry
     ├── mcx/                   # MCX commodity registry + types
-    ├── portfolio/             # Rolling metrics, drawdowns, diversification ratio (tested)
+    ├── factors/               # Factor definitions, z-score, presets, composite score
+    ├── portfolio/             # Rolling metrics, drawdowns, diversification, storage, TC (tested)
     └── utils.ts               # cn + CSV helpers
 
 public/india/
 ├── registry.json              # NSE stock metadata
 ├── mcx-registry.json          # MCX commodity metadata
+├── factors.json               # Weekly cross-sectional factor scores (204 tickers x 6 factors)
+├── news.json                  # 10-min refreshed stock-tagged RSS aggregation
 └── prices/
     ├── {TICKER}.json          # NSE per-ticker OHLCV
     └── mcx/{SYMBOL}.json      # MCX per-commodity OHLCV
@@ -53,6 +59,8 @@ scripts/
 ├── ingest_mcx.py                # daily MCX bhavcopy refresh (runs in GitHub Actions)
 ├── backfill_mcx_bhavcopy.py     # historical backfill via mcxpy (real INR OHLCV)
 ├── backfill_mcx.py              # yfinance surrogate fallback (deprecated)
+├── build_factors.py             # weekly cross-sectional factor score build
+├── fetch_news.py                # RSS aggregation (ET, Moneycontrol, Google News)
 └── requirements.txt
 
 docs/
@@ -67,6 +75,7 @@ docs/
 - **[Architecture](docs/ARCHITECTURE.md)** — folder layout, data flow, service boundaries
 - **[CLAUDE.md](CLAUDE.md)** — non-negotiable rules for AI sessions working on this repo
 - **[Sprint 1 plan](docs/plans/2026-04-20-sprint-1.md)** — what shipped in v0.2.x (MCX commodities + portfolio metrics + real bhavcopy data + transaction-cost model)
+- **[Sprint 2 plan](docs/plans/2026-04-21-sprint-2.md)** — what shipped in v0.3.0 (multi-factor library + goal wizard + news feed + saved portfolios)
 
 ## Compliance
 
