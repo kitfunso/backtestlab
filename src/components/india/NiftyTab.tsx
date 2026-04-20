@@ -16,15 +16,25 @@ import {
 import { fetchPriceData } from '@/lib/india/data';
 import { StrategyBuilder } from './StrategyBuilder';
 import registryJson from '../../../public/india/registry.json';
+import mcxRegistryJson from '../../../public/india/mcx-registry.json';
+import { initMcxRegistry, MCX_COMMODITIES, getCommodity } from '@/lib/mcx/registry';
+import { CommodityGrid } from '@/components/mcx/CommodityGrid';
 import { usePortfolioOptimisation } from '@/lib/india/portfolio-hooks';
 import type { AllocMethod as OptiAllocMethod } from '@/lib/india/optimizer';
+import { PortfolioMetricsPanel } from '@/components/portfolio/PortfolioMetricsPanel';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
   ScatterChart, Scatter, Cell,
 } from 'recharts';
 
-// Initialize registry on module load
+// Initialize registries on module load
 initRegistry(registryJson as { stocks: { ticker: string; yf: string; name: string; lot_size: number; sector: string }[] });
+initMcxRegistry(mcxRegistryJson as Parameters<typeof initMcxRegistry>[0]);
+
+// "Commodities" is a virtual tab alongside the 8 GICS sectors
+const COMMODITIES_TAB = 'commodities' as const;
+type SectorTab = GICSSector | typeof COMMODITIES_TAB;
+const COMMODITIES_COLOR = '#FF9933';
 
 // ---------------------------------------------------------------------------
 // NiftyTab
@@ -37,7 +47,7 @@ interface NiftyTabProps {
 type ViewMode = 'strategy' | 'portfolio';
 
 export function NiftyTab({ isLight }: NiftyTabProps) {
-  const [activeSector, setActiveSector] = useState<GICSSector>('financials');
+  const [activeSector, setActiveSector] = useState<SectorTab>('financials');
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [selectedPriceData, setSelectedPriceData] = useState<PriceData | null>(null);
   const [portfolio, setPortfolio] = useState<Set<string>>(new Set());
@@ -47,8 +57,9 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
 
   const sectorCounts = useMemo(() => getSectorCounts(), []);
 
-  // Stocks in current sector, filtered by search
+  // Stocks in current sector, filtered by search. Empty for the commodities tab.
   const sectorStocks = useMemo(() => {
+    if (activeSector === COMMODITIES_TAB) return [] as readonly IndiaStock[];
     let stocks = getStocksBySector(activeSector);
     if (search.trim()) {
       const q = search.toLowerCase().trim();
@@ -57,6 +68,16 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
       );
     }
     return stocks;
+  }, [activeSector, search]);
+
+  // Commodities shown when the virtual tab is active, filtered by search.
+  const sectorCommodities = useMemo(() => {
+    if (activeSector !== COMMODITIES_TAB) return MCX_COMMODITIES;
+    if (!search.trim()) return MCX_COMMODITIES;
+    const q = search.toLowerCase().trim();
+    return MCX_COMMODITIES.filter(
+      (c) => c.symbol.toLowerCase().includes(q) || c.name.toLowerCase().includes(q),
+    );
   }, [activeSector, search]);
 
   const portfolioStocks = useMemo(() => {
@@ -93,6 +114,12 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
   }, []);
 
   const selectedStock = selectedTicker ? getStock(selectedTicker) : undefined;
+  const selectedCommodity = selectedTicker ? getCommodity(selectedTicker) : undefined;
+  const selectedInstrument = selectedStock
+    ? { ticker: selectedStock.ticker, lot_size: selectedStock.lot_size, name: selectedStock.name }
+    : selectedCommodity
+      ? { ticker: selectedCommodity.symbol, lot_size: selectedCommodity.lot_size, name: selectedCommodity.name }
+      : null;
 
   // Theme
   const textMuted = isLight ? 'text-gray-500' : 'text-zinc-400';
@@ -216,28 +243,61 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
                 </button>
               );
             })}
+            {/* Commodities pseudo-sector tab */}
+            {(() => {
+              const active = activeSector === COMMODITIES_TAB;
+              return (
+                <button
+                  key={COMMODITIES_TAB}
+                  onClick={() => { setActiveSector(COMMODITIES_TAB); setSearch(''); }}
+                  className={cn(
+                    'relative px-2.5 py-1.5 text-[11px] font-medium rounded-lg transition-all shrink-0 border',
+                    active
+                      ? 'text-black'
+                      : isLight
+                        ? 'text-gray-500 border-transparent hover:bg-gray-100'
+                        : 'text-zinc-400 border-transparent hover:bg-zinc-800/50',
+                  )}
+                  style={active ? { backgroundColor: COMMODITIES_COLOR, borderColor: COMMODITIES_COLOR } : undefined}
+                >
+                  Commodities
+                  <span className={cn('ml-1 font-mono text-[10px]', active ? 'opacity-70' : 'opacity-40')}>
+                    {MCX_COMMODITIES.length}
+                  </span>
+                </button>
+              );
+            })()}
           </div>
 
-          {/* Stock grid card */}
+          {/* Stock / Commodity grid card */}
           <div
             className={cn(
               'rounded-xl border overflow-hidden',
               isLight ? 'bg-white border-gray-200' : 'bg-zinc-900/30 border-zinc-800',
             )}
           >
-            <StockGrid
-              stocks={sectorStocks}
-              selectedTicker={selectedTicker}
-              portfolio={portfolio}
-              onSelect={handleSelectStock}
-              onTogglePortfolio={handleTogglePortfolio}
-              isLight={isLight}
-            />
+            {activeSector === COMMODITIES_TAB ? (
+              <CommodityGrid
+                commodities={sectorCommodities}
+                selectedSymbol={selectedTicker}
+                onSelect={handleSelectStock}
+                isLight={isLight}
+              />
+            ) : (
+              <StockGrid
+                stocks={sectorStocks}
+                selectedTicker={selectedTicker}
+                portfolio={portfolio}
+                onSelect={handleSelectStock}
+                onTogglePortfolio={handleTogglePortfolio}
+                isLight={isLight}
+              />
+            )}
           </div>
 
           {/* Strategy Builder — always visible */}
           <StrategyBuilder
-            stock={selectedStock ?? null}
+            stock={selectedInstrument}
             priceData={selectedPriceData}
             isLight={isLight}
             onClose={() => { setSelectedTicker(null); setSelectedPriceData(null); }}
@@ -400,18 +460,26 @@ function PortfolioView({
 }) {
   const [allocMethod, setAllocMethod] = useState<AllocMethod>('equal');
   const [prices, setPrices] = useState<Record<string, number>>({});
+  const [perStockHistory, setPerStockHistory] = useState<Record<string, { dates: readonly string[]; close: readonly number[] }>>({});
   const textMuted = isLight ? 'text-gray-500' : 'text-zinc-400';
 
-  // Load last prices for portfolio stocks
+  // Load full price history for portfolio stocks (latest price + full close series)
   useEffect(() => {
-    stocks.forEach(async (stock) => {
-      try {
-        const data = await fetchPriceData(stock.ticker);
-        if (data && data.close.length > 0) {
+    let cancelled = false;
+    void Promise.all(
+      stocks.map(async (stock) => {
+        try {
+          const data = await fetchPriceData(stock.ticker);
+          if (!data || data.close.length === 0 || cancelled) return;
           setPrices((prev) => ({ ...prev, [stock.ticker]: data.close[data.close.length - 1] }));
-        }
-      } catch { /* skip */ }
-    });
+          setPerStockHistory((prev) => ({
+            ...prev,
+            [stock.ticker]: { dates: data.dates, close: data.close },
+          }));
+        } catch { /* skip */ }
+      }),
+    );
+    return () => { cancelled = true; };
   }, [stocks]);
 
   // Portfolio optimisation hook
@@ -426,6 +494,79 @@ function PortfolioView({
 
   // Use optimised weights if available, else equal weight
   const weights = optResult ? optResult.weights : stocks.map(() => 1 / stocks.length);
+
+  // All portfolio stocks have full history loaded?
+  const allHistoryLoaded = stocks.length > 0 && stocks.every((s) => perStockHistory[s.ticker]);
+
+  // Compute aligned daily returns, portfolio return series, and equity curve.
+  // Alignment rule: intersect trading dates across all stocks (shortest history wins).
+  const metricsData = useMemo(() => {
+    if (!allHistoryLoaded || stocks.length === 0) return null;
+
+    // Build per-stock date->close maps
+    const maps: Map<string, number>[] = stocks.map((s) => {
+      const h = perStockHistory[s.ticker];
+      const m = new Map<string, number>();
+      for (let i = 0; i < h.dates.length; i++) m.set(h.dates[i], h.close[i]);
+      return m;
+    });
+
+    // Common date intersection — start from the shortest series, filter by presence in all others.
+    let shortestIdx = 0;
+    let shortestLen = perStockHistory[stocks[0].ticker].dates.length;
+    for (let i = 1; i < stocks.length; i++) {
+      const len = perStockHistory[stocks[i].ticker].dates.length;
+      if (len < shortestLen) { shortestLen = len; shortestIdx = i; }
+    }
+    const candidateDates = perStockHistory[stocks[shortestIdx].ticker].dates;
+    const commonDates: string[] = [];
+    for (const d of candidateDates) {
+      if (maps.every((m) => m.has(d))) commonDates.push(d);
+    }
+    if (commonDates.length < 2) return null;
+
+    // Per-stock aligned close series + daily returns (rᵢ = pₜ/pₜ₋₁ − 1)
+    const perAssetReturns: number[][] = stocks.map((_s, si) => {
+      const m = maps[si];
+      const rets: number[] = [];
+      let prev = m.get(commonDates[0])!;
+      for (let k = 1; k < commonDates.length; k++) {
+        const cur = m.get(commonDates[k])!;
+        rets.push(prev > 0 ? cur / prev - 1 : 0);
+        prev = cur;
+      }
+      return rets;
+    });
+
+    // Portfolio returns: Σᵢ wᵢ rᵢ per day (weights length matches stocks length)
+    const n = perAssetReturns[0]?.length ?? 0;
+    const portfolioReturns: number[] = new Array(n).fill(0);
+    for (let t = 0; t < n; t++) {
+      let r = 0;
+      for (let i = 0; i < stocks.length; i++) {
+        r += (weights[i] ?? 0) * perAssetReturns[i][t];
+      }
+      portfolioReturns[t] = r;
+    }
+
+    // Equity curve: 100 × Π(1 + rₚ), aligned to returnDates (one shorter than commonDates).
+    const equity: number[] = new Array(n);
+    let eq = 100;
+    for (let t = 0; t < n; t++) {
+      eq *= 1 + portfolioReturns[t];
+      equity[t] = eq;
+    }
+    const returnDates = commonDates.slice(1);
+
+    return {
+      portfolioReturns,
+      portfolioEquityCurve: equity,
+      dates: returnDates,
+      perAssetReturns,
+      weights,
+      assetNames: stocks.map((s) => s.ticker),
+    };
+  }, [allHistoryLoaded, stocks, perStockHistory, weights]);
 
   if (stocks.length === 0) {
     return (
@@ -677,6 +818,24 @@ function PortfolioView({
             </div>
           )}
         </div>
+      )}
+
+      {/* Historical portfolio metrics panel (rolling Sharpe/vol, drawdowns, distribution) */}
+      {stocks.length >= 2 && !allHistoryLoaded && (
+        <div className={cn('rounded-xl border px-4 py-3 text-xs', isLight ? 'bg-white border-gray-200 text-gray-500' : 'bg-zinc-900/30 border-zinc-800 text-zinc-400')}>
+          Loading price history for {stocks.length} stocks…
+        </div>
+      )}
+      {metricsData && (
+        <PortfolioMetricsPanel
+          portfolioReturns={metricsData.portfolioReturns}
+          portfolioEquityCurve={metricsData.portfolioEquityCurve}
+          dates={metricsData.dates}
+          perAssetReturns={metricsData.perAssetReturns}
+          weights={metricsData.weights}
+          assetNames={metricsData.assetNames}
+          isLight={isLight}
+        />
       )}
 
       {/* Placeholder when no results */}

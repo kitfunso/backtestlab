@@ -1,40 +1,75 @@
 # Backtest Lab
 
-Block-based strategy tester and portfolio optimizer for NSE-listed Indian equities.
+Block-based strategy tester and portfolio builder for Indian equities (NSE) and MCX commodities. Live at **[backtestlab.pages.dev](https://backtestlab.pages.dev)**.
 
-Visual lego-style builder: chain indicators → triggers → actions into a strategy, backtest across a GICS sector universe, optimize a portfolio. Rupee-denominated, F&O lot-aware.
+Visual lego-style builder: chain indicators → triggers → actions into a strategy, backtest across 204 NSE F&O stocks plus 6 liquid MCX commodities, compose a portfolio with extended metrics (rolling Sharpe, top drawdowns, Sortino/Calmar, diversification ratio). Rupee-denominated, F&O lot-aware.
 
 ## Stack
 
-- Next.js 14 (App Router) + React 18 + TypeScript
-- Tailwind CSS
-- Recharts
+- Next.js 14 (App Router) + React 18 + TypeScript — static export on Cloudflare Pages
+- Tailwind CSS + Recharts
+- Python 3.12 for offline data ingestion (`scripts/`)
+- Jest + ts-jest for the metrics test suite
 
 ## Getting started
 
 ```bash
 npm install
-npm run dev
+npm run dev      # http://localhost:3000
+npm test         # run unit tests (30 tests in src/lib/portfolio/)
+npm run build    # static export → out/
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+## What you can do
+
+- **Strategy tester** — pick an NSE stock or MCX commodity, compose an indicator/trigger/action pipeline, backtest over ~1 year of history.
+- **Portfolio builder** — pick up to 12 instruments, run an optimizer (equal-weight, risk-parity, min-variance, max-Sharpe, max-diversification), see portfolio-level metrics: rolling Sharpe/vol, top-5 drawdowns, return distribution, Sortino, Calmar, diversification ratio.
+- **MCX commodities** — Gold, Silver, Copper, Crude, MCX iCOMDEX Bullion, MCX iCOMDEX Base Metal. Backfilled history for the 4 singles via yfinance surrogates; indices forward-only from MCX bhavcopy.
 
 ## Structure
 
 ```
 src/
-├── app/                  # Next.js app router (layout, root page)
-├── components/india/     # React UI (NiftyTab, StrategyBuilder, ResultsPanel)
+├── app/                       # Next.js app router (layout, root page)
+├── components/
+│   ├── india/                 # NSE UI (NiftyTab, StrategyBuilder, ResultsPanel)
+│   ├── mcx/                   # MCX commodity selector + grid
+│   └── portfolio/             # PortfolioMetricsPanel
 └── lib/
-    ├── india/            # Strategy engine: indicators, backtest, optimizer, registry
-    └── utils.ts          # cn + CSV helpers
+    ├── india/                 # NSE strategy engine: indicators, backtest, optimizer, registry
+    ├── mcx/                   # MCX commodity registry + types
+    ├── portfolio/             # Rolling metrics, drawdowns, diversification ratio (tested)
+    └── utils.ts               # cn + CSV helpers
 
 public/india/
-├── registry.json         # Stock metadata (ticker, sector, lot size)
-└── prices/               # Per-ticker OHLCV price history (JSON)
+├── registry.json              # NSE stock metadata
+├── mcx-registry.json          # MCX commodity metadata
+└── prices/
+    ├── {TICKER}.json          # NSE per-ticker OHLCV
+    └── mcx/{SYMBOL}.json      # MCX per-commodity OHLCV
+
+scripts/
+├── ingest_mcx.py              # daily MCX bhavcopy refresh (runs in GitHub Actions)
+├── backfill_mcx.py            # one-shot historical backfill via yfinance surrogates
+└── requirements.txt
+
+docs/
+├── PRD.md                     # scope guard ("IS NOT" list)
+├── ARCHITECTURE.md            # tech stack, folder layout, data model
+└── plans/                     # per-sprint execution plans
 ```
+
+## Docs
+
+- **[PRD](docs/PRD.md)** — what the product is and explicitly is not
+- **[Architecture](docs/ARCHITECTURE.md)** — folder layout, data flow, service boundaries
+- **[CLAUDE.md](CLAUDE.md)** — non-negotiable rules for AI sessions working on this repo
+- **[Sprint 1 plan](docs/plans/2026-04-20-sprint-1.md)** — what shipped in v0.2.0
+
+## Compliance
+
+For educational purposes only — not investment advice. Past performance does not predict future results. Backtest Lab is a research tool; it does not place trades, manage funds, or provide SEBI-registered advisory services.
 
 ## Provenance
 
-Extracted from the [Quantamental](https://github.com/kitfunso/quantamental) monorepo
-on 2026-04-20. Full commit history preserved via `git filter-repo`.
+Extracted from the [Quantamental](https://github.com/kitfunso/quantamental) monorepo on 2026-04-20 via `git filter-repo` (preserved history). Built as a standalone product for Indian retail/prosumer quants.

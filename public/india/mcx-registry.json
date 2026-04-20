@@ -1,0 +1,64 @@
+{
+  "commodities": [
+    {
+      "symbol": "GOLD",
+      "mcx_ticker": "MCXGOLD",
+      "bbg_ticker": "MCXGOLD Comdty",
+      "name": "MCX Gold",
+      "kind": "single",
+      "contract_size": "1 kg",
+      "tick_size": 1,
+      "lot_size": 100
+    },
+    {
+      "symbol": "SILVER",
+      "mcx_ticker": "MCXSILV",
+      "bbg_ticker": "MCXSILV Comdty",
+      "name": "MCX Silver",
+      "kind": "single",
+      "contract_size": "30 kg",
+      "tick_size": 1,
+      "lot_size": 30
+    },
+    {
+      "symbol": "COPPER",
+      "mcx_ticker": "MCXCOPP",
+      "bbg_ticker": "MCXCOPP Comdty",
+      "name": "MCX Copper",
+      "kind": "single",
+      "contract_size": "2500 kg",
+      "tick_size": 0.05,
+      "lot_size": 2500
+    },
+    {
+      "symbol": "CRUDE",
+      "mcx_ticker": "MCXCRUDE",
+      "bbg_ticker": "MCXCRUDE Comdty",
+      "name": "MCX Crude Oil",
+      "kind": "single",
+      "contract_size": "100 barrels",
+      "tick_size": 1,
+      "lot_size": 100
+    },
+    {
+      "symbol": "MCXBULLDEX",
+      "mcx_ticker": "MCXBULLDEX",
+      "bbg_ticker": "MCXBULLDEX Index",
+      "name": "MCX iCOMDEX Bullion",
+      "kind": "index",
+      "contract_size": "INR 30 per index point",
+      "tick_size": 0.5,
+      "lot_size": 30
+    },
+    {
+      "symbol": "MCXMETLDEX",
+      "mcx_ticker": "MCXMETLDEX",
+      "bbg_ticker": "MCXMETLDEX Index",
+      "name": "MCX iCOMDEX Base Metal",
+      "kind": "index",
+      "contract_size": "INR 40 per index point",
+      "tick_size": 0.5,
+      "lot_size": 40
+    }
+  ]
+}

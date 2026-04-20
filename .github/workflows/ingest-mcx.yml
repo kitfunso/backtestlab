@@ -1,0 +1,55 @@
+name: MCX daily bhavcopy ingest
+
+# Runs weekdays at 18:00 UTC (23:30 IST) - well after the MCX evening session
+# close at 23:30 IST. This leaves a buffer for MCX to publish the day's
+# bhavcopy. The script is idempotent, so a re-run is a no-op.
+
+on:
+  schedule:
+    - cron: '0 18 * * 1-5'  # 18:00 UTC, weekdays
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ingest-mcx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/requirements.txt
+
+      - name: Run MCX bhavcopy ingest
+        run: python scripts/ingest_mcx.py
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet public/india/prices/mcx/; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/india/prices/mcx/
+          git commit -m "data(mcx): daily bhavcopy $(date -u +%Y-%m-%d)"
+          git push

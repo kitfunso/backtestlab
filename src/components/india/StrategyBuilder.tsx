@@ -48,8 +48,14 @@ import { ResultsPanel } from './ResultsPanel';
 // Props
 // ---------------------------------------------------------------------------
 
+export interface TradableInstrument {
+  readonly ticker: string;
+  readonly lot_size: number;
+  readonly name?: string;
+}
+
 interface StrategyBuilderProps {
-  stock: IndiaStock | null;
+  stock: TradableInstrument | null;
   priceData: PriceData | null;
   isLight: boolean;
   onClose: () => void;

@@ -5,14 +5,22 @@
  */
 
 import type { PriceData } from './types';
+import { isMcxSymbol } from '@/lib/mcx/registry';
 
 const priceCache = new Map<string, PriceData>();
+
+function pricePath(ticker: string): string {
+  const encoded = encodeURIComponent(ticker);
+  return isMcxSymbol(ticker)
+    ? `/india/prices/mcx/${encoded}.json`
+    : `/india/prices/${encoded}.json`;
+}
 
 export async function fetchPriceData(ticker: string): Promise<PriceData> {
   const cached = priceCache.get(ticker);
   if (cached) return cached;
 
-  const res = await fetch(`/india/prices/${encodeURIComponent(ticker)}.json`);
+  const res = await fetch(pricePath(ticker));
   if (!res.ok) {
     throw new Error(`Failed to fetch price data for ${ticker}: ${res.status}`);
   }
