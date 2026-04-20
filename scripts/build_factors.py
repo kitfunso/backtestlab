@@ -35,6 +35,7 @@ import json
 import logging
 import math
 import statistics
+import time
 from datetime import date
 from pathlib import Path
 from typing import Iterable
@@ -54,9 +55,20 @@ MOM6_DAYS = 126
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PRICES_DIR = REPO_ROOT / "public" / "india" / "prices"
 OUTPUT_PATH = REPO_ROOT / "public" / "india" / "factors.json"
+REGISTRY_PATH = REPO_ROOT / "public" / "india" / "registry.json"
 
 # Candidate market-proxy filenames (checked in order).
 MARKET_PROXY_FILES = ("^NSEI.json", "NIFTY.json")
+
+# yfinance info key -> output factor key
+FUNDAMENTAL_KEYS = {
+    "trailingPE": "pe",
+    "priceToBook": "pb",
+    "returnOnEquity": "roe",
+    "revenueGrowth": "rev_growth",
+    "debtToEquity": "de",
+}
+FUNDAMENTAL_SLEEP_SECONDS = 0.2
 
 
 # ---------------------------------------------------------------------------
@@ -385,6 +397,9 @@ def build_factors(
         )
         factors[ticker] = _compute_ticker_factors(closes, highs, lows, aligned_market)
 
+    # Fetch fundamentals via yfinance and attach to each ticker's row.
+    _merge_fundamentals(factors, REGISTRY_PATH)
+
     # Sort output by ticker for stable diffs.
     factors_sorted = {t: factors[t] for t in sorted(factors)}
 
@@ -400,6 +415,64 @@ def build_factors(
         fh.write("\n")
     logger.info("wrote %d tickers to %s", len(factors_sorted), output_path)
     return result
+
+
+def _load_yf_map(registry_path: Path) -> dict[str, str]:
+    """Return {ticker: yf_ticker} from the NSE registry."""
+    data = json.loads(registry_path.read_text(encoding="utf-8"))
+    return {s["ticker"]: s.get("yf", f"{s['ticker']}.NS") for s in data["stocks"]}
+
+
+def _fetch_fundamentals(yf_ticker: str) -> dict[str, float | None]:
+    """Fetch fundamentals via yfinance; return {factor_key: value | None}."""
+    try:
+        import yfinance as yf
+
+        info = yf.Ticker(yf_ticker).info
+    except Exception as exc:  # broad: yfinance raises various network + parse errors
+        logger.warning("yfinance fetch failed for %s: %s", yf_ticker, exc)
+        return {k: None for k in FUNDAMENTAL_KEYS.values()}
+
+    out: dict[str, float | None] = {}
+    for yf_key, factor_key in FUNDAMENTAL_KEYS.items():
+        raw = info.get(yf_key) if isinstance(info, dict) else None
+        if raw is None:
+            out[factor_key] = None
+            continue
+        try:
+            v = float(raw)
+        except (TypeError, ValueError):
+            out[factor_key] = None
+            continue
+        out[factor_key] = v if math.isfinite(v) else None
+    return out
+
+
+def _merge_fundamentals(
+    factors: dict[str, dict[str, float | None]],
+    registry_path: Path,
+) -> None:
+    """Attach fundamental factor keys to each ticker's factor row in place."""
+    if not registry_path.exists():
+        logger.warning("registry missing at %s — skipping fundamentals", registry_path)
+        for row in factors.values():
+            for k in FUNDAMENTAL_KEYS.values():
+                row[k] = None
+        return
+
+    yf_map = _load_yf_map(registry_path)
+    total = len(factors)
+    filled = 0
+    for idx, ticker in enumerate(sorted(factors)):
+        yf_ticker = yf_map.get(ticker, f"{ticker}.NS")
+        funds = _fetch_fundamentals(yf_ticker)
+        factors[ticker].update(funds)
+        if any(v is not None for v in funds.values()):
+            filled += 1
+        if (idx + 1) % 20 == 0:
+            logger.info("fundamentals: %d/%d tickers fetched", idx + 1, total)
+        time.sleep(FUNDAMENTAL_SLEEP_SECONDS)
+    logger.info("fundamentals: %d/%d tickers have at least one value", filled, total)
 
 
 def main() -> None:
