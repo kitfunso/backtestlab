@@ -3,3 +3,4 @@ pandas==2.2.3
 python-dateutil==2.9.0.post0
 yfinance>=0.2.66,<0.3.0
 mcxpy==0.0.3
+feedparser==6.0.11
