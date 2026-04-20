@@ -157,6 +157,9 @@ export function NewsPanel({ ticker, isLight = false }: NewsPanelProps) {
           ))}
         </ul>
       )}
+      <div className={cn('px-3 py-2 text-[10px] border-t', isLight ? 'border-gray-200 text-gray-500' : 'border-zinc-800 text-zinc-500')}>
+        Headlines aggregated from public RSS feeds. Not a recommendation.
+      </div>
     </div>
   );
 }

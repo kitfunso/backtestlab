@@ -729,12 +729,19 @@ export function StrategyBuilder({
           </div>
         )}
         {(result || isLoading || error || (stock && priceData)) && (
-          <ResultsPanel
-            result={result}
-            isLoading={isLoading}
-            error={error}
-            isLight={isLight}
-          />
+          <>
+            <ResultsPanel
+              result={result}
+              isLoading={isLoading}
+              error={error}
+              isLight={isLight}
+            />
+            {result && (
+              <div className={cn('mt-2 text-[10px] text-center', textMuted)}>
+                Backtest on historical data — for educational purposes only. Not investment advice.
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
