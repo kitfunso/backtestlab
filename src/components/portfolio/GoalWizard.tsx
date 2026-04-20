@@ -8,7 +8,14 @@ import {
   PRESET_DESCRIPTIONS,
   type GoalPreset,
 } from '@/lib/factors/presets';
-import { compositeScore, selectTopN, type FactorUniverse } from '@/lib/factors/score';
+import {
+  compositeScore,
+  selectTopN,
+  factorContributions,
+  FACTOR_LABELS,
+  type FactorUniverse,
+  type FactorName,
+} from '@/lib/factors/score';
 
 const ACK_KEY = 'bl.wizard.acknowledged';
 
@@ -72,6 +79,16 @@ export function GoalWizard({ isLight, sectors, names, onApply, onClose }: Wizard
     const scores = compositeScore(factorsFile.factors, weights);
     return selectTopN(scores, sectors, size, 3);
   }, [factorsFile, preset, size, sectors]);
+
+  const driversByTicker = useMemo<Record<string, Array<{ factor: FactorName; contribution: number }>>>(() => {
+    if (!factorsFile) return {};
+    const weights = getPresetWeights(preset);
+    const out: Record<string, Array<{ factor: FactorName; contribution: number }>> = {};
+    for (const t of picks) {
+      out[t] = factorContributions(factorsFile.factors, weights, t).slice(0, 2);
+    }
+    return out;
+  }, [factorsFile, preset, picks]);
 
   const panel = isLight ? 'bg-white border-gray-200 text-gray-900' : 'bg-zinc-900 border-zinc-800 text-zinc-100';
   const mutedText = isLight ? 'text-gray-500' : 'text-zinc-400';
@@ -227,13 +244,23 @@ export function GoalWizard({ isLight, sectors, names, onApply, onClose }: Wizard
             </button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
-            {picks.map((t) => (
-              <div key={t} className={`rounded border px-2.5 py-1.5 text-sm ${chip}`}>
-                <div className="font-medium">{t}</div>
-                {names?.[t] && <div className={`text-[10px] truncate ${mutedText}`}>{names[t]}</div>}
-                {sectors[t] && <div className={`text-[10px] ${mutedText}`}>{sectors[t]}</div>}
-              </div>
-            ))}
+            {picks.map((t) => {
+              const drivers = driversByTicker[t] ?? [];
+              return (
+                <div key={t} className={`rounded border px-2.5 py-1.5 text-sm ${chip}`}>
+                  <div className="font-medium">{t}</div>
+                  {names?.[t] && <div className={`text-[10px] truncate ${mutedText}`}>{names[t]}</div>}
+                  {sectors[t] && <div className={`text-[10px] ${mutedText}`}>{sectors[t]}</div>}
+                  {drivers.length > 0 && (
+                    <div className={`text-[10px] mt-0.5 ${mutedText}`}>
+                      {drivers
+                        .map((d) => `${FACTOR_LABELS[d.factor]} ${d.contribution >= 0 ? '▲' : '▼'}`)
+                        .join(' • ')}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
