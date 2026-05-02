@@ -8,9 +8,10 @@ name: News RSS aggregator
 #     without burning minutes.
 
 on:
-  schedule:
-    - cron: '*/10 3-10 * * 1-5'   # 10-min during IST market hours
-    - cron: '0 * * * *'            # hourly off-hours fallback
+  # Schedules paused 2026-05-02 by user request. Re-enable by uncommenting.
+  # schedule:
+  #   - cron: '*/10 3-10 * * 1-5'   # 10-min during IST market hours
+  #   - cron: '0 * * * *'            # hourly off-hours fallback
   workflow_dispatch:
 
 permissions:
