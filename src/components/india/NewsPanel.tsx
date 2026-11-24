@@ -3,15 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 interface NewsItem {
   readonly title: string;
   readonly url: string;
   readonly source: string;
-  readonly published: string; // ISO8601
+  readonly published: string;
   readonly tickers: readonly string[];
 }
 
@@ -25,17 +21,9 @@ interface NewsPanelProps {
   readonly isLight?: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const REFRESH_INTERVAL_MS = 10 * 60 * 1000; // 10 min — matches server cron
+const REFRESH_INTERVAL_MS = 10 * 60 * 1000;
 const MAX_RENDERED_ITEMS = 20;
 const NEWS_URL = '/india/news.json';
-
-// ---------------------------------------------------------------------------
-// Helpers (local — no date-fns)
-// ---------------------------------------------------------------------------
 
 function relativeTime(iso: string, now: number): string {
   const ts = Date.parse(iso);
@@ -54,15 +42,10 @@ function relativeTime(iso: string, now: number): string {
   return `${diffMo}mo ago`;
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 export function NewsPanel({ ticker, isLight = false }: NewsPanelProps) {
   const [payload, setPayload] = useState<NewsPayload | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  // `now` is stored in state so relative timestamps re-render on refresh.
   const [now, setNow] = useState<number>(() => Date.now());
 
   const load = useCallback(async () => {

@@ -1,14 +1,3 @@
-/**
- * India Equities Strategy Tester - Type Definitions
- *
- * All TypeScript types for the strategy builder, backtest engine,
- * indicator computation, and result presentation.
- */
-
-// ---------------------------------------------------------------------------
-// Stock Registry
-// ---------------------------------------------------------------------------
-
 export type GICSSector =
   | 'financials'
   | 'it'
@@ -27,10 +16,6 @@ export interface IndiaStock {
   readonly sector: GICSSector;
 }
 
-// ---------------------------------------------------------------------------
-// Price Data (loaded from JSON)
-// ---------------------------------------------------------------------------
-
 export interface PriceData {
   readonly ticker: string;
   readonly dates: readonly string[];
@@ -41,12 +26,7 @@ export interface PriceData {
   readonly volume: readonly number[];
 }
 
-// ---------------------------------------------------------------------------
-// Indicator Types
-// ---------------------------------------------------------------------------
-
 export type IndicatorType =
-  // Trend
   | 'sma'
   | 'ema'
   | 'dema'
@@ -103,10 +83,6 @@ export interface IndicatorConfig {
   readonly params: Readonly<Record<string, number>>;
 }
 
-// ---------------------------------------------------------------------------
-// Signal Rules
-// ---------------------------------------------------------------------------
-
 export type SignalCondition =
   | 'crosses_above'
   | 'crosses_below'
@@ -124,24 +100,13 @@ export interface SignalRule {
 
 export type CombineLogic = 'and' | 'or';
 
-// ---------------------------------------------------------------------------
-// Rebalance & Sizing
-// ---------------------------------------------------------------------------
-
 export type RebalanceFreq = 'daily' | 'weekly' | 'biweekly' | 'monthly';
 
 export interface SizingConfig {
-  /** Risk budget in INR */
   readonly risk_budget: number;
-  /** Rolling volatility lookback in days */
   readonly vol_window: number;
-  /** Z-multiplier for VaR-style sizing */
   readonly z_multiplier: number;
 }
-
-// ---------------------------------------------------------------------------
-// Strategy Config (what the user builds)
-// ---------------------------------------------------------------------------
 
 export interface StrategyConfig {
   readonly indicators: readonly IndicatorConfig[];
@@ -150,10 +115,6 @@ export interface StrategyConfig {
   readonly sizing: SizingConfig;
   readonly rebalance: RebalanceFreq;
 }
-
-// ---------------------------------------------------------------------------
-// Backtest Results
-// ---------------------------------------------------------------------------
 
 export interface BacktestMetrics {
   readonly sharpe: number;
@@ -203,10 +164,6 @@ export interface BacktestResult {
   readonly trades: readonly Trade[];
   readonly signals: { readonly dates: string[]; readonly values: number[] };
 }
-
-// ---------------------------------------------------------------------------
-// Preset Strategies
-// ---------------------------------------------------------------------------
 
 export interface PresetStrategy {
   readonly id: string;

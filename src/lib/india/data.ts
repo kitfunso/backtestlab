@@ -1,9 +1,3 @@
-/**
- * India Equities - Price Data Fetcher
- *
- * Fetches price JSON from /india/prices/{TICKER}.json with in-memory caching.
- */
-
 import type { PriceData } from './types';
 import { isMcxSymbol } from '@/lib/mcx/registry';
 
@@ -30,7 +24,6 @@ export async function fetchPriceData(ticker: string): Promise<PriceData> {
   return data;
 }
 
-/** Preload price data for a list of tickers (fire-and-forget). */
 export function preloadPriceData(tickers: readonly string[]): void {
   for (const t of tickers) {
     if (!priceCache.has(t)) {
@@ -41,12 +34,10 @@ export function preloadPriceData(tickers: readonly string[]): void {
   }
 }
 
-/** Check if price data is already cached. */
 export function isPriceCached(ticker: string): boolean {
   return priceCache.has(ticker);
 }
 
-/** Clear the price cache (for testing). */
 export function clearPriceCache(): void {
   priceCache.clear();
 }

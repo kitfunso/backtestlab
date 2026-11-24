@@ -1,13 +1,5 @@
 'use client';
 
-/**
- * CommodityGrid — compact grid of MCX commodity cards.
- *
- * Parallel to `StockGrid` in NiftyTab.tsx. Kept separate because commodities
- * have different metadata (tick_size, contract_size, kind) and no GICS sector,
- * so a shared adapter would be more code than a focused component.
- */
-
 import { cn } from '@/lib/utils';
 import type { MCXCommodity } from '@/lib/mcx/types';
 import type { PriceSummary } from '@/lib/india/prices-summary';
@@ -56,7 +48,6 @@ export function CommodityGrid({
                     : 'bg-zinc-900/40 border-zinc-800/60 hover:border-zinc-600',
               )}
             >
-              {/* 1Y return — top right */}
               <div
                 className={cn(
                   'absolute top-1.5 right-2 text-[10px] font-mono font-semibold',
@@ -70,7 +61,6 @@ export function CommodityGrid({
                 {px?.yr1_pct == null ? '--' : `${px.yr1_pct >= 0 ? '+' : ''}${(px.yr1_pct * 100).toFixed(0)}%`}
               </div>
 
-              {/* Kind badge — below the 1Y chip */}
               <div
                 className={cn(
                   'absolute top-5 right-2 text-[8px] font-mono uppercase tracking-wider',
@@ -80,17 +70,14 @@ export function CommodityGrid({
                 {c.kind === 'index' ? 'IDX' : 'SPOT'}
               </div>
 
-              {/* Symbol */}
               <div className={cn('text-[11px] font-bold font-mono leading-tight', isLight ? 'text-gray-900' : 'text-zinc-100')}>
                 {c.symbol}
               </div>
 
-              {/* Name */}
               <div className={cn('text-[9px] truncate leading-tight mt-0.5', textMuted)} title={c.name}>
                 {c.name}
               </div>
 
-              {/* Metrics row: price / lot / tick */}
               <div className="flex items-center gap-2 mt-1.5">
                 <div>
                   <div className={cn('text-[7px] uppercase tracking-wider', textMuted)}>Price</div>

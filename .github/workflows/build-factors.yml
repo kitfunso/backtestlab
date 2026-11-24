@@ -1,10 +1,5 @@
 name: Weekly factor score build
 
-# Rebuilds public/india/factors.json from the cached NSE price JSONs.
-# Runs Saturdays at 04:00 UTC (09:30 IST) — safely after NSE Friday close
-# and well before the next Monday open, so the wizard always consumes a
-# freshly-computed set of factor scores.
-
 on:
   schedule:
     - cron: '0 4 * * 6'  # 04:00 UTC, Saturday

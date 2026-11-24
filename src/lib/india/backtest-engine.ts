@@ -1,9 +1,3 @@
-/**
- * India Equities Strategy Tester - Backtest Engine
- *
- * Core computation: indicators -> signals -> position sizing -> PnL -> metrics.
- */
-
 import type {
   BacktestMetrics,
   BacktestResult,
@@ -23,10 +17,6 @@ import {
   type InstrumentClass,
 } from '@/lib/portfolio/transaction-costs';
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
 export function runBacktest(
   prices: PriceData,
   config: StrategyConfig,
@@ -36,22 +26,16 @@ export function runBacktest(
   const n = prices.close.length;
   if (n < 2) return emptyResult();
 
-  // 1. Compute all indicators
   const indicatorOutputs = computeIndicators(prices, config.indicators);
 
-  // 2. Generate raw signal series from rules
   const rawSignals = generateSignals(indicatorOutputs, config.rules, config.combine_logic, n);
 
-  // 3. Apply rebalance frequency filter
   const signals = applyRebalance(rawSignals, prices.dates, config.rebalance);
 
-  // 4. Position sizing
   const lots = computeLots(prices.close as number[], signals, config.sizing, lotSize);
 
-  // 5. Compute daily gross PnL (signal lagged by 1 day: trade on next bar)
   const grossPnl = computeDailyPnl(prices.close as number[], signals, lots, lotSize);
 
-  // 6. Transaction costs — charged only on position changes
   const tradeCosts = computeTradeCosts(
     prices.close as number[],
     signals,
@@ -60,22 +44,17 @@ export function runBacktest(
     instrumentClass,
   );
 
-  // 7. Net PnL = gross - costs
   const dailyPnl = grossPnl.map((p, i) => p - (tradeCosts[i] ?? 0));
   const totalCosts = tradeCosts.reduce((a, b) => a + b, 0);
 
-  // 8. Build trade log
   const trades = buildTradeLog(prices, signals, lots, lotSize);
 
-  // 9. Compute metrics (on net PnL)
   const metrics = computeMetrics(dailyPnl, trades, prices.dates as string[]);
   metrics.total_transaction_costs = round2(totalCosts);
 
-  // 10. Build equity curve and drawdown (net)
   const equityCurve = buildEquityCurve(dailyPnl, prices.dates as string[]);
   const drawdown = buildDrawdown(equityCurve.cumulative);
 
-  // 11. Monthly and yearly aggregation (net)
   const monthly = aggregateMonthly(dailyPnl, prices.dates as string[]);
   const yearly = aggregateYearly(dailyPnl, prices.dates as string[]);
 
@@ -90,19 +69,8 @@ export function runBacktest(
   };
 }
 
-// ---------------------------------------------------------------------------
-// Step 1: Compute Indicators
-// ---------------------------------------------------------------------------
-
-/**
- * Each indicator config produces one or more output series.
- * We return the "primary" series for signal comparison.
- * Multi-output indicators return the first/main line.
- */
 interface IndicatorOutput {
-  /** Primary output (used for signal comparisons) */
   primary: number[];
-  /** All named outputs for reference */
   all: Record<string, number[]>;
 }
 
@@ -119,7 +87,6 @@ function computeIndicators(
   return configs.map((cfg): IndicatorOutput => {
     const p = cfg.params;
     switch (cfg.type) {
-      // -- Trend --
       case 'sma': {
         const out = ind.sma(c, p.period ?? 20);
         return { primary: out, all: { sma: out } };
@@ -168,7 +135,6 @@ function computeIndicators(
         const res = ind.donchianChannel(h, l, p.period ?? 20);
         return { primary: res.middle, all: { upper: res.upper, middle: res.middle, lower: res.lower } };
       }
-      // -- Momentum --
       case 'rsi': {
         const out = ind.rsi(c, p.period ?? 14);
         return { primary: out, all: { rsi: out } };
@@ -217,7 +183,6 @@ function computeIndicators(
         const out = ind.tsMomentum(c, p.period ?? 126);
         return { primary: out, all: { ts_momentum: out } };
       }
-      // -- Volatility --
       case 'bollinger': {
         const res = ind.bollingerBands(c, p.period ?? 20, p.std_dev ?? 2);
         return { primary: res.middle, all: { upper: res.upper, middle: res.middle, lower: res.lower } };
@@ -250,7 +215,6 @@ function computeIndicators(
         const out = ind.chaikinVol(h, l, p.ema_period ?? 10, p.roc_period ?? 10);
         return { primary: out, all: { chaikin_vol: out } };
       }
-      // -- Volume --
       case 'obv': {
         const out = ind.obv(c, v);
         return { primary: out, all: { obv: out } };
@@ -275,7 +239,6 @@ function computeIndicators(
         const out = ind.vwap(h, l, c, v);
         return { primary: out, all: { vwap: out } };
       }
-      // -- Price --
       case 'pivot_points': {
         const res = ind.pivotPoints(h, l, c);
         return { primary: res.pp, all: { pp: res.pp, r1: res.r1, r2: res.r2, r3: res.r3, s1: res.s1, s2: res.s2, s3: res.s3 } };
@@ -309,10 +272,6 @@ function computeIndicators(
   });
 }
 
-// ---------------------------------------------------------------------------
-// Step 2: Generate Signal Series
-// ---------------------------------------------------------------------------
-
 function generateSignals(
   indicators: IndicatorOutput[],
   rules: readonly SignalRule[],
@@ -321,22 +280,15 @@ function generateSignals(
 ): number[] {
   if (rules.length === 0) return new Array(n).fill(0);
 
-  // Evaluate rules WITHOUT hold-signal logic first (raw trigger points only)
   const rawTriggers: number[][] = rules.map((rule) => evaluateRuleRaw(rule, indicators, n));
 
-  // Per-rule: is this a level condition (is_above/is_below) that outputs every bar?
-  // Level rules go flat when their condition stops. Crossing rules hold until next event.
   const isLevel: boolean[] = rules.map((r) => r.condition === 'is_above' || r.condition === 'is_below');
 
   const combined: number[] = new Array(n).fill(0);
 
   if (logic === 'or') {
-    // OR: build held signal per rule, then take the strongest active signal.
-    // Level rules: directly use raw output (0 = flat when condition not met).
-    // Crossing rules: hold last non-zero value until a new event.
     const heldPerRule: number[][] = rawTriggers.map((raw, r) => {
-      if (isLevel[r]) return raw; // level: raw output IS the signal (0 = flat)
-      // crossing: hold last non-zero
+      if (isLevel[r]) return raw;
       const held: number[] = new Array(n).fill(0);
       let last = 0;
       for (let i = 0; i < n; i++) {
@@ -347,7 +299,6 @@ function generateSignals(
     });
 
     for (let i = 0; i < n; i++) {
-      // Pick the last non-zero held signal (any rule that's active wins)
       let sig = 0;
       for (const held of heldPerRule) {
         if (held[i] !== 0) sig = held[i];
@@ -355,8 +306,6 @@ function generateSignals(
       combined[i] = sig;
     }
   } else {
-    // AND: all non-neutral held signals must agree.
-    // First, build held signals per rule.
     const heldSignals: number[][] = rawTriggers.map((raw) => {
       const held: number[] = new Array(n).fill(0);
       let last = 0;
@@ -384,12 +333,6 @@ function generateSignals(
   return combined;
 }
 
-/**
- * Evaluate a rule and return RAW trigger signals (no hold logic).
- * For crossing conditions: only fires on the bar where the cross happens.
- * For is_above/is_below: fires every bar the condition is true.
- * For direction='both': fires +1 or -1 depending on condition.
- */
 function evaluateRuleRaw(
   rule: SignalRule,
   indicators: IndicatorOutput[],
@@ -456,11 +399,10 @@ function evaluateRuleRaw(
         out[i] = -1;
       }
     } else if (rule.direction === 'both' && (rule.condition === 'is_above' || rule.condition === 'is_below')) {
-      // For 'both' with level conditions: fire opposite when condition is NOT met
       const target = refData ? refData[i] : (rule.threshold ?? 0);
       if (!isNaN(val) && !isNaN(target)) {
-        if (rule.condition === 'is_above') out[i] = -1; // not above = short
-        else out[i] = 1; // not below = long
+        if (rule.condition === 'is_above') out[i] = -1;
+        else out[i] = 1;
       }
     }
   }
@@ -468,7 +410,6 @@ function evaluateRuleRaw(
   return out;
 }
 
-/** @deprecated Use evaluateRuleRaw + signal combining instead */
 function evaluateRule(
   rule: SignalRule,
   indicators: IndicatorOutput[],
@@ -517,7 +458,6 @@ function evaluateRule(
         break;
       }
       case 'between': {
-        // threshold is lower, reference_indicator primary is upper
         const lower = rule.threshold ?? 0;
         const upper = refData ? refData[i] : 100;
         if (isNaN(upper)) break;
@@ -528,7 +468,6 @@ function evaluateRule(
 
     if (fired) {
       if (rule.direction === 'both') {
-        // 'both': automatically assigns direction based on condition
         if (rule.condition === 'crosses_above' || rule.condition === 'is_above') out[i] = 1;
         else out[i] = -1;
       } else if (rule.direction === 'long') {
@@ -539,7 +478,6 @@ function evaluateRule(
     }
   }
 
-  // For crossing conditions, hold the signal until the opposite crossing occurs
   if (rule.condition === 'crosses_above' || rule.condition === 'crosses_below') {
     let lastSignal = 0;
     for (let i = 0; i < n; i++) {
@@ -548,11 +486,9 @@ function evaluateRule(
     }
   }
 
-  // For 'is_above'/'is_below' with direction='both', generate opposite signal too
   if (rule.direction === 'both' && (rule.condition === 'is_above' || rule.condition === 'is_below')) {
     for (let i = 1; i < n; i++) {
       if (out[i] === 0) {
-        // If not firing the primary condition, fire the opposite
         const val = indData[i];
         const target = refData ? refData[i] : (rule.threshold ?? 0);
         if (!isNaN(val) && !isNaN(target)) {
@@ -565,10 +501,6 @@ function evaluateRule(
 
   return out;
 }
-
-// ---------------------------------------------------------------------------
-// Step 3: Rebalance Frequency Filter
-// ---------------------------------------------------------------------------
 
 function applyRebalance(
   signals: number[],
@@ -604,7 +536,6 @@ function shouldRebalance(
 
   switch (freq) {
     case 'weekly':
-      // Rebalance on Monday or if 7+ days have passed
       return current.getDay() === 1 || daysDiff(last, current) >= 7;
     case 'biweekly':
       return daysDiff(last, current) >= 14;
@@ -619,10 +550,6 @@ function daysDiff(a: Date, b: Date): number {
   return Math.floor((b.getTime() - a.getTime()) / 86_400_000);
 }
 
-// ---------------------------------------------------------------------------
-// Step 4: Position Sizing
-// ---------------------------------------------------------------------------
-
 function computeLots(
   close: number[],
   signals: number[],
@@ -633,7 +560,6 @@ function computeLots(
   const lots: number[] = new Array(n).fill(0);
   const { risk_budget, vol_window, z_multiplier } = sizing;
 
-  // Rolling volatility of close-to-close returns
   const returns: number[] = new Array(n).fill(0);
   for (let i = 1; i < n; i++) {
     returns[i] = close[i - 1] === 0 ? 0 : (close[i] - close[i - 1]) / close[i - 1];
@@ -642,7 +568,6 @@ function computeLots(
   for (let i = vol_window; i < n; i++) {
     if (signals[i] === 0) continue;
 
-    // Rolling std of returns
     let m = 0;
     for (let j = i - vol_window + 1; j <= i; j++) m += returns[j];
     m /= vol_window;
@@ -654,18 +579,13 @@ function computeLots(
     const vol = Math.sqrt(variance / (vol_window - 1));
     const volFloor = Math.max(vol, 0.01);
 
-    // lots = floor(risk_budget / (price * lot_size * vol * z_mult))
     const denom = close[i] * lotSize * volFloor * z_multiplier;
     if (denom <= 0) continue;
     const rawLots = Math.floor(risk_budget / denom);
-    lots[i] = Math.max(rawLots, 1); // minimum 1 lot when signal is active
+    lots[i] = Math.max(rawLots, 1);
   }
   return lots;
 }
-
-// ---------------------------------------------------------------------------
-// Step 5: Daily PnL
-// ---------------------------------------------------------------------------
 
 function computeDailyPnl(
   close: number[],
@@ -677,7 +597,6 @@ function computeDailyPnl(
   const pnl: number[] = new Array(n).fill(0);
 
   for (let i = 1; i < n; i++) {
-    // Use previous day's signal and lots (trade on next bar)
     const prevSignal = signals[i - 1];
     const prevLots = lots[i - 1];
     if (prevSignal === 0 || prevLots === 0) continue;
@@ -686,10 +605,6 @@ function computeDailyPnl(
   }
   return pnl;
 }
-
-// ---------------------------------------------------------------------------
-// Step 6: Build Trade Log
-// ---------------------------------------------------------------------------
 
 function buildTradeLog(
   prices: PriceData,
@@ -712,13 +627,11 @@ function buildTradeLog(
     const curSig = signals[i];
 
     if (!inTrade && curSig !== 0) {
-      // Open trade
       inTrade = true;
       entryIdx = i;
       entrySignal = curSig;
       entryLots = lots[i];
     } else if (inTrade && (curSig !== entrySignal || curSig === 0)) {
-      // Close trade
       const entryPrice = close[entryIdx];
       const exitPrice = close[i];
       const tradePnl = entrySignal * entryLots * lotSize * (exitPrice - entryPrice);
@@ -737,7 +650,6 @@ function buildTradeLog(
         duration_days: Math.max(dur, 1),
       });
 
-      // If new signal, open a new trade immediately
       if (curSig !== 0) {
         inTrade = true;
         entryIdx = i;
@@ -749,7 +661,6 @@ function buildTradeLog(
     }
   }
 
-  // Close any remaining open trade at the last bar
   if (inTrade) {
     const entryPrice = close[entryIdx];
     const exitPrice = close[n - 1];
@@ -773,10 +684,6 @@ function buildTradeLog(
   return trades;
 }
 
-// ---------------------------------------------------------------------------
-// Step 7: Metrics
-// ---------------------------------------------------------------------------
-
 function computeMetrics(
   dailyPnl: number[],
   trades: Trade[],
@@ -785,32 +692,25 @@ function computeMetrics(
   const nonZero = dailyPnl.filter((v) => v !== 0);
   const totalPnl = dailyPnl.reduce((a, b) => a + b, 0);
 
-  // Cumulative equity for return calculations
   const cumPnl: number[] = new Array(dailyPnl.length);
   cumPnl[0] = dailyPnl[0];
   for (let i = 1; i < dailyPnl.length; i++) cumPnl[i] = cumPnl[i - 1] + dailyPnl[i];
 
   const peak = Math.max(...cumPnl.filter((v) => !isNaN(v)), 0);
-  const initialEquity = 1_000_000; // Assume 10 lakh starting capital for return %
-
-  // Sharpe (annualized from daily)
+  const initialEquity = 1_000_000;
   const meanPnl = nonZero.length === 0 ? 0 : nonZero.reduce((a, b) => a + b, 0) / dailyPnl.length;
   const pnlStd = stdDevArr(dailyPnl);
   const sharpe = pnlStd === 0 ? 0 : (meanPnl / pnlStd) * Math.sqrt(252);
 
-  // Sortino (downside deviation)
   const downsideDev = downsideDeviation(dailyPnl);
   const sortino = downsideDev === 0 ? 0 : (meanPnl / downsideDev) * Math.sqrt(252);
 
-  // Max drawdown
   const { maxDdPct, maxDdInr, maxDdDurationDays } = maxDrawdownStats(cumPnl, dates, initialEquity);
 
-  // Calmar
   const years = dates.length / 252;
   const annualReturn = years === 0 ? 0 : totalPnl / years;
   const calmar = maxDdInr === 0 ? 0 : annualReturn / Math.abs(maxDdInr);
 
-  // Trade statistics
   const wins = trades.filter((t) => t.pnl > 0);
   const losses = trades.filter((t) => t.pnl <= 0);
   const grossProfit = wins.reduce((a, t) => a + t.pnl, 0);
@@ -830,7 +730,6 @@ function computeMetrics(
   const bestTrade = tradePnls.length === 0 ? 0 : Math.max(...tradePnls);
   const worstTrade = tradePnls.length === 0 ? 0 : Math.min(...tradePnls);
 
-  // Consecutive wins/losses
   const { maxConsecWins, maxConsecLosses } = consecutiveStreaks(trades);
 
   return {
@@ -860,10 +759,6 @@ function computeMetrics(
   };
 }
 
-// ---------------------------------------------------------------------------
-// Step 8: Equity Curve & Drawdown
-// ---------------------------------------------------------------------------
-
 function buildEquityCurve(
   dailyPnl: number[],
   dates: string[],
@@ -881,15 +776,10 @@ function buildDrawdown(cumulative: number[]): number[] {
   let peak = -Infinity;
   for (let i = 0; i < n; i++) {
     if (cumulative[i] > peak) peak = cumulative[i];
-    // Drawdown in INR (not percentage — no meaningful capital base for F&O)
-    dd[i] = cumulative[i] - peak; // Always <= 0
+    dd[i] = cumulative[i] - peak;
   }
   return dd;
 }
-
-// ---------------------------------------------------------------------------
-// Step 9: Monthly / Yearly Aggregation
-// ---------------------------------------------------------------------------
 
 function aggregateMonthly(
   dailyPnl: number[],
@@ -922,10 +812,6 @@ function aggregateYearly(
     .sort((a, b) => a.year - b.year);
 }
 
-// ---------------------------------------------------------------------------
-// Utility Helpers
-// ---------------------------------------------------------------------------
-
 function stdDevArr(arr: number[]): number {
   const n = arr.length;
   if (n < 2) return 0;
@@ -945,7 +831,7 @@ function downsideDeviation(arr: number[]): number {
   if (negatives.length === 0) return 0;
   let m = 0;
   for (const v of negatives) m += v;
-  m /= arr.length; // use full count for proper scaling
+  m /= arr.length;
   let variance = 0;
   for (const v of arr) {
     if (v < 0) {

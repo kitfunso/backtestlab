@@ -58,7 +58,6 @@ const LONG_ONLY_CONFIG: StrategyConfig = {
 
 describe('runBacktest — direction semantics', () => {
   it('short-only profits on a post-warmup falling regime', () => {
-    // regimeShift ensures the MA cross fires AFTER indicator warmup
     const fallingAfterWarmup = regimeShiftPrices(100, 80, 400, -0.0015);
     const risingAfterWarmup = regimeShiftPrices(100, 80, 400, 0.0015);
     const rFall = runBacktest(fallingAfterWarmup, SHORT_ONLY_CONFIG, 100);
@@ -124,7 +123,6 @@ describe('runBacktest — AND combine logic', () => {
 
 describe('runBacktest — condition semantics', () => {
   it('crosses_above long-only produces held long signals after the post-warmup cross', () => {
-    // Warmup flat so SMA20/SMA50 converge, then rising regime forces SMA20 above SMA50
     const prices = regimeShiftPrices(100, 80, 300, 0.0015);
     const r = runBacktest(prices, LONG_ONLY_CONFIG, 100);
     const signals = r.signals.values;
@@ -141,7 +139,6 @@ describe('runBacktest — condition semantics', () => {
       rules: [{ indicator_index: 0, condition: 'is_above', reference_indicator: 1, direction: 'both' }],
     };
     const r = runBacktest(prices, cfg, 100);
-    // After both SMAs are warm (bar ~50+), every bar should be +1 or -1 (level rule, both direction)
     const tail = r.signals.values.slice(60);
     const flatBars = tail.filter((v) => v === 0).length;
     expect(flatBars).toBe(0);
@@ -168,9 +165,6 @@ describe('runBacktest — condition semantics', () => {
       rebalance: 'daily',
     };
     const r = runBacktest(prices, cfg, 100);
-    // Between uses threshold as lower bound and reference_indicator value as upper bound.
-    // When indicator_index == reference_indicator, val <= upper always holds, so any bar
-    // with rsi >= 40 should fire long.
     const activeBars = r.signals.values.filter((v) => v === 1).length;
     expect(activeBars).toBeGreaterThan(0);
     expect(r.signals.values.some((v) => v === -1)).toBe(false);
@@ -266,7 +260,6 @@ describe('runBacktest — reconciliation', () => {
     const r = runBacktest(prices, SMA_CROSS_CONFIG, 100);
     const costs = r.metrics.total_transaction_costs ?? 0;
     expect(costs).toBeGreaterThanOrEqual(0);
-    // When there are trades, costs should be non-zero
     if (r.metrics.num_trades > 0) {
       expect(costs).toBeGreaterThan(0);
     }
@@ -284,7 +277,6 @@ describe('runBacktest — reconciliation', () => {
     const prices = trendingPrices(100, 400, 0.0007);
     const r = runBacktest(prices, SMA_CROSS_CONFIG, 100);
     const finalCum = r.equity_curve.cumulative[r.equity_curve.cumulative.length - 1];
-    // total_pnl is rounded to 2dp; cumulative is the raw running sum
     expect(Math.abs(finalCum - r.metrics.total_pnl)).toBeLessThan(0.01);
   });
 });

@@ -1,10 +1,3 @@
-/**
- * India Equities - Portfolio Optimisation React Hook
- *
- * Loads price data for a basket of tickers, computes daily returns,
- * runs the optimiser, and generates the efficient frontier.
- */
-
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
@@ -17,10 +10,6 @@ import type {
   OptimisationResult,
 } from './optimizer';
 import { efficientFrontier, optimisePortfolio } from './optimizer';
-
-// ---------------------------------------------------------------------------
-// Hook Config & Return Types
-// ---------------------------------------------------------------------------
 
 interface PortfolioOptimisationConfig {
   readonly tickers: readonly string[];
@@ -39,19 +28,6 @@ interface PortfolioOptimisationReturn {
   readonly run: () => void;
 }
 
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
-
-/**
- * Hook to run portfolio optimisation for a basket of Indian equities.
- *
- * Call `run()` to trigger the computation. The hook loads price data,
- * computes returns, runs the optimiser, and generates the efficient frontier.
- *
- * @param config - tickers, sectors, method, constraints, capital, lotSizes
- * @returns result, frontier, isLoading, error, run
- */
 export function usePortfolioOptimisation(
   config: PortfolioOptimisationConfig,
 ): PortfolioOptimisationReturn {
@@ -75,14 +51,12 @@ export function usePortfolioOptimisation(
     setIsLoading(true);
     setError(null);
 
-    // 1. Load all price data in parallel
     const pricePromises = tickers.map((t) => fetchPriceData(t));
 
     Promise.all(pricePromises)
       .then((allPrices) => {
         if (abortRef.current !== runId) return;
 
-        // 2. Compute daily returns for each stock
         const allReturns: number[][] = [];
         for (let i = 0; i < allPrices.length; i++) {
           const close = allPrices[i].close;
@@ -90,19 +64,15 @@ export function usePortfolioOptimisation(
             throw new Error(`Insufficient price data for ${tickers[i]}`);
           }
           const ret = dailyReturns(close);
-          // Drop the first NaN element
           allReturns.push(ret.slice(1));
         }
 
-        // 3. Build optimisation config
         const optConfig: OptimisationConfig = {
           method,
           constraints,
           sectors: [...sectors],
         };
 
-        // 4. Run optimisation (synchronous, should be < 500ms for 20 stocks)
-        // Use setTimeout to avoid blocking paint
         setTimeout(() => {
           if (abortRef.current !== runId) return;
 
@@ -112,7 +82,6 @@ export function usePortfolioOptimisation(
 
             setResult(optResult);
 
-            // 5. Generate efficient frontier
             const frontierPoints = efficientFrontier(allReturns, optConfig);
             if (abortRef.current !== runId) return;
 

@@ -1,34 +1,3 @@
-"""Build price-derived factor scores for the NSE universe.
-
-Reads every price JSON under ``public/india/prices/*.json`` (ignoring the
-``mcx/`` subfolder), re-implements the six factors from
-``src/lib/factors/definitions.ts`` in pure Python, then writes a single
-``public/india/factors.json`` with:
-
-    {
-      "computed_at": "2026-04-21",
-      "universe_size": N,
-      "factors": {
-        "RELIANCE": {
-          "mom12_1": 0.12,
-          "mom6_1": 0.07,
-          "low_vol": 0.28,
-          "short_rev": -0.015,
-          "low_beta": 1.05,
-          "low_disp": 0.018
-        },
-        ...
-      }
-    }
-
-Market proxy for ``low_beta``: if neither ``^NSEI.json`` nor ``NIFTY.json``
-exists under the prices directory, build an equal-weight average of all
-loaded close series aligned on their common date index.
-
-Stdlib only (json + math + statistics + pathlib + datetime + logging).
-Runs against all 204 NSE tickers in well under a second.
-"""
-
 from __future__ import annotations
 
 import json
@@ -42,10 +11,6 @@ from typing import Iterable
 
 logger = logging.getLogger("build_factors")
 
-# ---------------------------------------------------------------------------
-# Constants — keep in sync with src/lib/factors/definitions.ts
-# ---------------------------------------------------------------------------
-
 DAYS_YEAR = 252
 SKIP_DAYS = 21
 REVERSAL_DAYS = 5
@@ -57,10 +22,8 @@ PRICES_DIR = REPO_ROOT / "public" / "india" / "prices"
 OUTPUT_PATH = REPO_ROOT / "public" / "india" / "factors.json"
 REGISTRY_PATH = REPO_ROOT / "public" / "india" / "registry.json"
 
-# Candidate market-proxy filenames (checked in order).
 MARKET_PROXY_FILES = ("^NSEI.json", "NIFTY.json")
 
-# yfinance info key -> output factor key
 FUNDAMENTAL_KEYS = {
     "trailingPE": "pe",
     "priceToBook": "pb",
@@ -71,13 +34,7 @@ FUNDAMENTAL_KEYS = {
 FUNDAMENTAL_SLEEP_SECONDS = 0.2
 
 
-# ---------------------------------------------------------------------------
-# Factor implementations — TS-parity
-# ---------------------------------------------------------------------------
-
-
 def _simple_returns(closes: list[float]) -> list[float]:
-    """Daily simple returns. Length = len(closes) - 1."""
     out: list[float] = []
     for i in range(1, len(closes)):
         prev = closes[i - 1]
@@ -121,7 +78,7 @@ def volatility(closes: list[float]) -> float | None:
     returns = _simple_returns(closes[-(DAYS_YEAR + 1):])
     if len(returns) < 2:
         return None
-    std = statistics.stdev(returns)  # sample std (n-1), matches TS
+    std = statistics.stdev(returns)
     return std * math.sqrt(DAYS_YEAR)
 
 
@@ -181,26 +138,18 @@ def dispersion(
     return total / count
 
 
-# ---------------------------------------------------------------------------
-# Data loading
-# ---------------------------------------------------------------------------
-
-
 def _load_one(path: Path) -> dict:
-    """Load a single price JSON. Caller handles errors."""
     with path.open("r", encoding="utf-8") as fh:
         return json.load(fh)
 
 
 def _iter_price_files(prices_dir: Path) -> Iterable[Path]:
-    """Yield top-level NSE price JSONs (skip the MCX subfolder)."""
     for path in sorted(prices_dir.glob("*.json")):
         if path.is_file():
             yield path
 
 
 def _load_universe(prices_dir: Path) -> dict[str, dict]:
-    """Load every NSE price JSON into a `ticker -> payload` dict."""
     universe: dict[str, dict] = {}
     for path in _iter_price_files(prices_dir):
         try:
@@ -213,13 +162,7 @@ def _load_universe(prices_dir: Path) -> dict[str, dict]:
     return universe
 
 
-# ---------------------------------------------------------------------------
-# Market proxy
-# ---------------------------------------------------------------------------
-
-
 def _find_market_proxy(prices_dir: Path) -> list[float] | None:
-    """Return the market proxy close series, or None if no index file exists."""
     for name in MARKET_PROXY_FILES:
         path = prices_dir / name
         if path.exists():
@@ -234,23 +177,6 @@ def _find_market_proxy(prices_dir: Path) -> list[float] | None:
 
 
 def _build_equal_weight_proxy(universe: dict[str, dict]) -> tuple[list[str], list[float]]:
-    """Equal-weight return-based market proxy spanning the full universe history.
-
-    We avoid intersecting on all-ticker-present dates (which collapses to the
-    newest IPO and yields far less than 252 observations for beta). Instead:
-
-      1. Union all dates across the universe.
-      2. For each ticker build its daily return series.
-      3. For each date, equal-weight the returns from every ticker with data
-         that day.
-      4. Cumulate those returns into a synthetic close series starting at 100.
-
-    This gives a proxy with the FULL span of the earliest-listed ticker, even
-    when many tickers IPO'd later.
-
-    Returns ``(dates, proxy_closes)`` aligned oldest-first.
-    """
-    # Step 1: union of dates.
     all_dates: set[str] = set()
     for payload in universe.values():
         all_dates.update(str(d) for d in payload["dates"])
@@ -260,7 +186,6 @@ def _build_equal_weight_proxy(universe: dict[str, dict]) -> tuple[list[str], lis
     date_to_idx = {d: i for i, d in enumerate(ordered_dates)}
     n = len(ordered_dates)
 
-    # Step 2/3: accumulate per-date return sum and count.
     sum_r = [0.0] * n
     count = [0] * n
 
@@ -284,7 +209,6 @@ def _build_equal_weight_proxy(universe: dict[str, dict]) -> tuple[list[str], lis
             sum_r[idx] += r
             count[idx] += 1
 
-    # Step 4: cumulate into synthetic close series starting at 100.
     proxy = [0.0] * n
     level = 100.0
     proxy[0] = level
@@ -303,23 +227,11 @@ def _build_equal_weight_proxy(universe: dict[str, dict]) -> tuple[list[str], lis
     return ordered_dates, proxy
 
 
-# ---------------------------------------------------------------------------
-# Per-ticker factor assembly
-# ---------------------------------------------------------------------------
-
-
 def _align_market_to_stock(
     stock_dates: list[str],
     proxy_dates: list[str],
     proxy_closes: list[float],
 ) -> list[float] | None:
-    """Return a proxy close vector aligned 1:1 with stock_dates.
-
-    For every date in ``stock_dates`` that exists in ``proxy_dates`` we return
-    the matching proxy close; missing dates are forward-filled from the prior
-    known proxy value. If no proxy value has been seen yet (stock predates the
-    proxy), we return None (no beta computable).
-    """
     if not proxy_dates:
         return None
     index = {d: i for i, d in enumerate(proxy_dates)}
@@ -353,24 +265,16 @@ def _compute_ticker_factors(
     }
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
-
 def build_factors(
     prices_dir: Path = PRICES_DIR,
     output_path: Path = OUTPUT_PATH,
 ) -> dict:
-    """Load universe, compute factors, write ``factors.json``. Return the dict."""
     universe = _load_universe(prices_dir)
     if not universe:
         raise RuntimeError(f"no price files found under {prices_dir}")
 
-    # Resolve market proxy. Prefer an index file; fall back to equal-weight avg.
     proxy_closes = _find_market_proxy(prices_dir)
     if proxy_closes is not None:
-        # Index files carry their own date vector; read it now.
         for name in MARKET_PROXY_FILES:
             p = prices_dir / name
             if p.exists():
@@ -397,10 +301,8 @@ def build_factors(
         )
         factors[ticker] = _compute_ticker_factors(closes, highs, lows, aligned_market)
 
-    # Fetch fundamentals via yfinance and attach to each ticker's row.
     _merge_fundamentals(factors, REGISTRY_PATH)
 
-    # Sort output by ticker for stable diffs.
     factors_sorted = {t: factors[t] for t in sorted(factors)}
 
     result = {
@@ -418,18 +320,16 @@ def build_factors(
 
 
 def _load_yf_map(registry_path: Path) -> dict[str, str]:
-    """Return {ticker: yf_ticker} from the NSE registry."""
     data = json.loads(registry_path.read_text(encoding="utf-8"))
     return {s["ticker"]: s.get("yf", f"{s['ticker']}.NS") for s in data["stocks"]}
 
 
 def _fetch_fundamentals(yf_ticker: str) -> dict[str, float | None]:
-    """Fetch fundamentals via yfinance; return {factor_key: value | None}."""
     try:
         import yfinance as yf
 
         info = yf.Ticker(yf_ticker).info
-    except Exception as exc:  # broad: yfinance raises various network + parse errors
+    except Exception as exc:
         logger.warning("yfinance fetch failed for %s: %s", yf_ticker, exc)
         return {k: None for k in FUNDAMENTAL_KEYS.values()}
 
@@ -452,7 +352,6 @@ def _merge_fundamentals(
     factors: dict[str, dict[str, float | None]],
     registry_path: Path,
 ) -> None:
-    """Attach fundamental factor keys to each ticker's factor row in place."""
     if not registry_path.exists():
         logger.warning("registry missing at %s — skipping fundamentals", registry_path)
         for row in factors.values():

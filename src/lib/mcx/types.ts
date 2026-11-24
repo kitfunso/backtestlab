@@ -1,10 +1,3 @@
-/**
- * MCX Commodities — Type Definitions
- *
- * Commodity-side mirror of `src/lib/india/types.ts`. Scope intentionally narrow:
- * the backtest engine is shared, so only metadata shapes live here.
- */
-
 export type CommodityKind = 'single' | 'index';
 
 export interface MCXCommodity {

@@ -18,11 +18,6 @@ export type FactorScores = Partial<Record<FactorName, number>>;
 
 export type FactorUniverse = Record<string, FactorScores>;
 
-/**
- * +1 means higher raw value is a better signal; -1 means lower raw is better.
- * Applied to the cross-sectional z-score before weighting so that positive
- * weights always mean "load on the good side of this factor".
- */
 const FACTOR_DIRECTION: Record<FactorName, 1 | -1> = {
   mom12_1: 1,
   mom6_1: 1,
@@ -65,10 +60,6 @@ export const FACTOR_LABELS: Record<FactorName, string> = {
   de: 'Low debt/equity',
 };
 
-/**
- * Collapse per-factor z-scores into a single composite per ticker.
- * Factors without a weight in `weights` are skipped (weight = 0).
- */
 export function compositeScore(
   universe: FactorUniverse,
   weights: FactorWeights,
@@ -102,14 +93,6 @@ export function compositeScore(
   return composite;
 }
 
-/**
- * Compute per-factor contributions to the composite score for a single ticker.
- * Returns both the contribution magnitude (for ranking drivers) and the raw
- * factor z-score (for the UI arrow — ▲ = stock scores high on raw factor,
- * ▼ = stock scores low). The contribution can be positive via the contrarian
- * path (negative weight × negative z), but the arrow should reflect where
- * the stock actually sits on the factor so the label reads intuitively.
- */
 export function factorContributions(
   universe: FactorUniverse,
   weights: FactorWeights,
@@ -136,11 +119,6 @@ export function factorContributions(
   return out;
 }
 
-/**
- * Pick the top-N tickers by composite score, capped at `sectorCap` per sector.
- * Tickers whose sector is missing from `sectors` are treated as unsectored
- * and always eligible (no cap applies to them).
- */
 export function selectTopN(
   scores: Record<string, number>,
   sectors: Record<string, string | undefined>,

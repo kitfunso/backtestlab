@@ -1,9 +1,3 @@
-/**
- * India Equities — Block Pipeline Utilities
- *
- * Converts between visual PipelineBlock[] and the engine's StrategyConfig.
- */
-
 import type {
   CombineLogic,
   IndicatorConfig,
@@ -24,10 +18,6 @@ import type {
 import { blockId } from './block-types';
 import { INDICATOR_META, TREND_TYPES } from './indicator-meta';
 
-// ---------------------------------------------------------------------------
-// Blocks → StrategyConfig
-// ---------------------------------------------------------------------------
-
 export function blocksToStrategyConfig(
   blocks: readonly PipelineBlock[],
   sizing: SizingConfig,
@@ -40,15 +30,12 @@ export function blocksToStrategyConfig(
 
   if (indicatorBlocks.length === 0) return null;
 
-  // Build indicators array + id→index map
   const idToIndex = new Map<string, number>();
   const indicators: IndicatorConfig[] = [];
 
-  // Check if we need a close_price pseudo-indicator
   let closePriceIndex = -1;
   for (const t of triggerBlocks) {
     if (!t.referenceBlockId) {
-      // Threshold-based trigger on a trend MA needs close_price
       const src = indicatorBlocks.find((b) => b.id === t.sourceBlockId);
       if (src && TREND_TYPES.includes(src.indicatorType)) {
         if (closePriceIndex === -1) {
@@ -64,7 +51,6 @@ export function blocksToStrategyConfig(
     indicators.push({ type: b.indicatorType, params: { ...b.params } });
   }
 
-  // Build rules from trigger+action pairs
   const rules: SignalRule[] = [];
   for (const t of triggerBlocks) {
     const action = actionBlocks.find((a) => a.triggerBlockId === t.id);
@@ -83,7 +69,6 @@ export function blocksToStrategyConfig(
         direction,
       });
     } else {
-      // For trend MAs without a reference, use close_price vs MA
       const src = indicatorBlocks.find((b) => b.id === t.sourceBlockId);
       if (src && TREND_TYPES.includes(src.indicatorType) && closePriceIndex !== -1) {
         rules.push({
@@ -108,15 +93,10 @@ export function blocksToStrategyConfig(
   return { indicators, rules, combine_logic: combineLogic, sizing, rebalance };
 }
 
-// ---------------------------------------------------------------------------
-// Preset → Blocks
-// ---------------------------------------------------------------------------
-
 export function presetToBlocks(preset: PresetStrategy): PipelineBlock[] {
   const blocks: PipelineBlock[] = [];
   const cfg = preset.config;
 
-  // Create indicator blocks (skip close_price pseudo-indicators)
   const indexToBlockId = new Map<number, string>();
   for (let i = 0; i < cfg.indicators.length; i++) {
     const ind = cfg.indicators[i];
@@ -131,7 +111,6 @@ export function presetToBlocks(preset: PresetStrategy): PipelineBlock[] {
     } as IndicatorBlock);
   }
 
-  // Create trigger + action blocks from rules
   for (const rule of cfg.rules) {
     const sourceId = indexToBlockId.get(rule.indicator_index);
     if (!sourceId) continue;
@@ -159,10 +138,6 @@ export function presetToBlocks(preset: PresetStrategy): PipelineBlock[] {
   return blocks;
 }
 
-// ---------------------------------------------------------------------------
-// Default blocks for a newly added indicator
-// ---------------------------------------------------------------------------
-
 export function getDefaultBlocks(type: IndicatorType): PipelineBlock[] {
   const meta = INDICATOR_META[type];
   const params: Record<string, number> = {};
@@ -181,7 +156,6 @@ export function getDefaultBlocks(type: IndicatorType): PipelineBlock[] {
     params,
   };
 
-  // Default trigger depends on indicator category
   let trigger: TriggerBlock;
   if (type === 'rsi' || type === 'stoch_rsi' || type === 'mfi') {
     trigger = { id: triggerId, kind: 'trigger', sourceBlockId: indId, condition: 'is_above', threshold: 50 };
@@ -192,10 +166,8 @@ export function getDefaultBlocks(type: IndicatorType): PipelineBlock[] {
   } else if (type === 'bb_pct_b') {
     trigger = { id: triggerId, kind: 'trigger', sourceBlockId: indId, condition: 'is_above', threshold: 0.5 };
   } else if (TREND_TYPES.includes(type)) {
-    // Trend MAs: "price is above MA" — close_price injected by blocksToStrategyConfig
     trigger = { id: triggerId, kind: 'trigger', sourceBlockId: indId, condition: 'is_above' };
   } else {
-    // Momentum, volatility, etc: "is above 0"
     trigger = { id: triggerId, kind: 'trigger', sourceBlockId: indId, condition: 'is_above', threshold: 0 };
   }
 
@@ -209,11 +181,6 @@ export function getDefaultBlocks(type: IndicatorType): PipelineBlock[] {
   return [indicator, trigger, action];
 }
 
-// ---------------------------------------------------------------------------
-// Validation
-// ---------------------------------------------------------------------------
-
-/** Check if block order is valid: indicators before their dependent triggers, triggers before actions */
 export function isValidOrder(blocks: readonly PipelineBlock[]): boolean {
   const seen = new Set<string>();
   for (const b of blocks) {
@@ -231,11 +198,9 @@ export function isValidOrder(blocks: readonly PipelineBlock[]): boolean {
   return true;
 }
 
-/** Remove a block and cascade-delete dependent blocks */
 export function removeBlockCascade(blocks: readonly PipelineBlock[], removeId: string): PipelineBlock[] {
   const removed = new Set<string>([removeId]);
 
-  // Cascade: triggers that reference removed indicators
   for (const b of blocks) {
     if (b.kind === 'trigger') {
       const t = b as TriggerBlock;
@@ -245,7 +210,6 @@ export function removeBlockCascade(blocks: readonly PipelineBlock[], removeId: s
     }
   }
 
-  // Cascade: actions that reference removed triggers
   for (const b of blocks) {
     if (b.kind === 'action') {
       const a = b as ActionBlock;

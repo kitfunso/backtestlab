@@ -1,15 +1,3 @@
-/**
- * India Equities - Matrix Math Utilities
- *
- * Covariance, correlation, matrix operations, and portfolio risk/return
- * calculations. Uses plain number[][] for simplicity and browser performance.
- */
-
-// ---------------------------------------------------------------------------
-// Statistical helpers
-// ---------------------------------------------------------------------------
-
-/** Arithmetic mean of an array, ignoring NaN values. Returns 0 for empty. */
 function mean(arr: readonly number[]): number {
   let sum = 0;
   let count = 0;
@@ -22,16 +10,6 @@ function mean(arr: readonly number[]): number {
   return count > 0 ? sum / count : 0;
 }
 
-// ---------------------------------------------------------------------------
-// Covariance & Correlation
-// ---------------------------------------------------------------------------
-
-/**
- * Compute the sample covariance matrix from daily returns.
- *
- * @param returns - [stock][day] array of daily returns
- * @returns N x N covariance matrix (sample covariance with Bessel correction)
- */
 export function covarianceMatrix(returns: readonly (readonly number[])[]): number[][] {
   const n = returns.length;
   if (n === 0) return [];
@@ -39,13 +17,11 @@ export function covarianceMatrix(returns: readonly (readonly number[])[]): numbe
   const T = returns[0].length;
   if (T < 2) return Array.from({ length: n }, () => new Array(n).fill(0));
 
-  // Pre-compute means
   const means = new Float64Array(n);
   for (let i = 0; i < n; i++) {
     means[i] = mean(returns[i]);
   }
 
-  // Build covariance matrix (symmetric, so only compute upper triangle)
   const cov: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
 
   for (let i = 0; i < n; i++) {
@@ -72,12 +48,6 @@ export function covarianceMatrix(returns: readonly (readonly number[])[]): numbe
   return cov;
 }
 
-/**
- * Compute the correlation matrix from a covariance matrix.
- *
- * @param cov - N x N covariance matrix
- * @returns N x N correlation matrix (diagonal = 1)
- */
 export function correlationMatrix(cov: readonly (readonly number[])[]): number[][] {
   const n = cov.length;
   if (n === 0) return [];
@@ -96,7 +66,6 @@ export function correlationMatrix(cov: readonly (readonly number[])[]): number[]
       } else {
         const denom = stdDevs[i] * stdDevs[j];
         const val = denom > 1e-15 ? cov[i][j] / denom : 0;
-        // Clamp to [-1, 1] for numerical safety
         const clamped = Math.max(-1, Math.min(1, val));
         corr[i][j] = clamped;
         corr[j][i] = clamped;
@@ -107,17 +76,6 @@ export function correlationMatrix(cov: readonly (readonly number[])[]): number[]
   return corr;
 }
 
-// ---------------------------------------------------------------------------
-// Matrix Operations
-// ---------------------------------------------------------------------------
-
-/**
- * Matrix multiply: A * B
- *
- * @param a - M x K matrix
- * @param b - K x N matrix
- * @returns M x N result matrix
- */
 export function matMul(
   a: readonly (readonly number[])[],
   b: readonly (readonly number[])[],
@@ -142,13 +100,6 @@ export function matMul(
   return result;
 }
 
-/**
- * Matrix-vector multiply: mat * vec
- *
- * @param mat - M x N matrix
- * @param vec - N-length vector
- * @returns M-length result vector
- */
 export function matVecMul(
   mat: readonly (readonly number[])[],
   vec: readonly number[],
@@ -168,9 +119,6 @@ export function matVecMul(
   return result;
 }
 
-/**
- * Dot product of two vectors.
- */
 export function dot(a: readonly number[], b: readonly number[]): number {
   let sum = 0;
   const len = Math.min(a.length, b.length);
@@ -180,17 +128,6 @@ export function dot(a: readonly number[], b: readonly number[]): number {
   return sum;
 }
 
-// ---------------------------------------------------------------------------
-// Portfolio Risk & Return
-// ---------------------------------------------------------------------------
-
-/**
- * Portfolio variance: w' * Sigma * w
- *
- * @param weights - N-length weight vector
- * @param cov - N x N covariance matrix
- * @returns Portfolio variance (scalar)
- */
 export function portfolioVariance(
   weights: readonly number[],
   cov: readonly (readonly number[])[],
@@ -199,13 +136,6 @@ export function portfolioVariance(
   return Math.max(0, dot(weights, sigmaW));
 }
 
-/**
- * Portfolio expected return: w' * mu
- *
- * @param weights - N-length weight vector
- * @param returns - N-length expected return vector
- * @returns Portfolio expected return (scalar)
- */
 export function portfolioReturn(
   weights: readonly number[],
   returns: readonly number[],
@@ -213,14 +143,6 @@ export function portfolioReturn(
   return dot(weights, returns);
 }
 
-// ---------------------------------------------------------------------------
-// Utility: compute daily returns from close prices
-// ---------------------------------------------------------------------------
-
-/**
- * Compute daily log returns from a close price series.
- * First element is NaN (no prior day).
- */
 export function dailyReturns(close: readonly number[]): number[] {
   const n = close.length;
   const ret = new Array<number>(n);
@@ -235,10 +157,6 @@ export function dailyReturns(close: readonly number[]): number[] {
   return ret;
 }
 
-/**
- * Compute annualised volatility from daily returns.
- * Uses 252 trading days per year.
- */
 export function annualisedVol(dailyRet: readonly number[]): number {
   let sum = 0;
   let sumSq = 0;
@@ -257,23 +175,10 @@ export function annualisedVol(dailyRet: readonly number[]): number {
   return Math.sqrt(Math.max(0, variance) * 252);
 }
 
-/**
- * Compute annualised mean return from daily returns.
- * Uses 252 trading days per year.
- */
 export function annualisedReturn(dailyRet: readonly number[]): number {
   return mean(dailyRet) * 252;
 }
 
-/**
- * Regularise a covariance matrix using Ledoit-Wolf shrinkage toward the
- * diagonal (identity scaled by average variance). Prevents singularity
- * when N is close to T.
- *
- * @param cov - N x N sample covariance matrix
- * @param shrinkage - shrinkage intensity in [0, 1] (default 0.1)
- * @returns Regularised covariance matrix
- */
 export function shrinkCovariance(
   cov: readonly (readonly number[])[],
   shrinkage = 0.1,
@@ -281,7 +186,6 @@ export function shrinkCovariance(
   const n = cov.length;
   if (n === 0) return [];
 
-  // Target: diagonal matrix with average variance
   let avgVar = 0;
   for (let i = 0; i < n; i++) {
     avgVar += cov[i][i];

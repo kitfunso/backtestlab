@@ -22,13 +22,12 @@ const SMA_CROSS_CONFIG: StrategyConfig = {
 
 describe('runBacktest — determinism and stock-dependence', () => {
   it('produces different metrics for a rising vs falling price series', () => {
-    const rising = trendingPrices(100, 500, 0.001); // +0.1%/day drift
-    const falling = trendingPrices(100, 500, -0.001); // -0.1%/day drift
+    const rising = trendingPrices(100, 500, 0.001);
+    const falling = trendingPrices(100, 500, -0.001);
 
     const risingResult = runBacktest(rising, SMA_CROSS_CONFIG, 100);
     const fallingResult = runBacktest(falling, SMA_CROSS_CONFIG, 100);
 
-    // An SMA cross long-only should profit on rising, lose on falling
     expect(risingResult.metrics.total_pnl).not.toBeCloseTo(fallingResult.metrics.total_pnl, 0);
     expect(risingResult.metrics.sharpe).not.toBeCloseTo(fallingResult.metrics.sharpe, 2);
   });
@@ -46,9 +45,6 @@ describe('runBacktest — determinism and stock-dependence', () => {
     const prices = trendingPrices(100, 300, 0.001);
     const r100 = runBacktest(prices, SMA_CROSS_CONFIG, 100);
     const r1000 = runBacktest(prices, SMA_CROSS_CONFIG, 1000);
-    // With a 10x lot size, the per-contract PnL scales. The vol-target
-    // sizing divides by lot size, so total PnL stays roughly constant
-    // (that's the point of vol-targeting). Just verify they're finite.
     expect(Number.isFinite(r100.metrics.total_pnl)).toBe(true);
     expect(Number.isFinite(r1000.metrics.total_pnl)).toBe(true);
   });
@@ -58,8 +54,6 @@ describe('runBacktest — determinism and stock-dependence', () => {
     const expensive = trendingPrices(5000, 400, 0.0008);
     const rCheap = runBacktest(cheap, SMA_CROSS_CONFIG, 100);
     const rExp = runBacktest(expensive, SMA_CROSS_CONFIG, 100);
-    // Trade counts should be similar (same drift pattern, different scale)
-    // but entry prices differ by ~100x
     if (rCheap.trades.length > 0 && rExp.trades.length > 0) {
       expect(rExp.trades[0].entry_price).toBeGreaterThan(rCheap.trades[0].entry_price * 50);
     }
@@ -77,7 +71,6 @@ describe('runBacktest — metric consistency', () => {
   it('max_dd_pct is non-positive (drawdown is a loss)', () => {
     const prices = trendingPrices(100, 500, 0.0005);
     const r = runBacktest(prices, SMA_CROSS_CONFIG, 100);
-    // max_dd_pct convention: drawdown is negative (loss from peak)
     expect(r.metrics.max_dd_pct).toBeLessThanOrEqual(0);
   });
 
@@ -93,12 +86,8 @@ describe('runBacktest — metric consistency', () => {
     const r = runBacktest(prices, SMA_CROSS_CONFIG, 100);
     const tradePnlSum = r.trades.reduce((a, t) => a + t.pnl, 0);
     const totalCosts = r.metrics.total_transaction_costs ?? 0;
-    // Trade log is gross (no TC), total_pnl is net. Adding costs back should
-    // close most of the gap; remaining diff is lot rebalancing within trades.
     const gapNet = tradePnlSum - r.metrics.total_pnl;
     const gapAfterCosts = gapNet - totalCosts;
-    // Rough guard: after TC adjustment, residual from lot drift should be
-    // bounded — not exceed gross PnL magnitude.
     const grossMagnitude = Math.max(
       Math.abs(r.metrics.total_pnl) + totalCosts,
       1,

@@ -33,18 +33,12 @@ import {
   ScatterChart, Scatter, Cell,
 } from 'recharts';
 
-// Initialize registries on module load
 initRegistry(registryJson as { stocks: { ticker: string; yf: string; name: string; lot_size: number; sector: string }[] });
 initMcxRegistry(mcxRegistryJson as Parameters<typeof initMcxRegistry>[0]);
 
-// "Commodities" is a virtual tab alongside the 8 GICS sectors
 const COMMODITIES_TAB = 'commodities' as const;
 type SectorTab = GICSSector | typeof COMMODITIES_TAB;
 const COMMODITIES_COLOR = '#FF9933';
-
-// ---------------------------------------------------------------------------
-// NiftyTab
-// ---------------------------------------------------------------------------
 
 interface NiftyTabProps {
   isLight: boolean;
@@ -59,7 +53,7 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
   const [portfolio, setPortfolio] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>('strategy');
   const [search, setSearch] = useState('');
-  const [portfolioCapital, setPortfolioCapital] = useState(5000000); // ₹50L default
+  const [portfolioCapital, setPortfolioCapital] = useState(5000000);
   const [showWizard, setShowWizard] = useState(false);
 
   const pricesSummary = usePricesSummary();
@@ -96,7 +90,6 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
 
   const sectorCounts = useMemo(() => getSectorCounts(), []);
 
-  // Stocks in current sector, filtered by search. Empty for the commodities tab.
   const sectorStocks = useMemo(() => {
     if (activeSector === COMMODITIES_TAB) return [] as readonly IndiaStock[];
     let stocks = getStocksBySector(activeSector);
@@ -109,7 +102,6 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
     return stocks;
   }, [activeSector, search]);
 
-  // Commodities shown when the virtual tab is active, filtered by search.
   const sectorCommodities = useMemo(() => {
     if (activeSector !== COMMODITIES_TAB) return MCX_COMMODITIES;
     if (!search.trim()) return MCX_COMMODITIES;
@@ -133,7 +125,6 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
     }
   }, []);
 
-  // Auto-select first stock on mount so the strategy builder is ready
   const didAutoSelect = useRef(false);
   useEffect(() => {
     if (!didAutoSelect.current && sectorStocks.length > 0 && !selectedTicker) {
@@ -160,12 +151,10 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
       ? { ticker: selectedCommodity.symbol, lot_size: selectedCommodity.lot_size, name: selectedCommodity.name }
       : null;
 
-  // Theme
   const textMuted = isLight ? 'text-gray-500' : 'text-zinc-400';
 
   return (
     <div className="space-y-3">
-      {/* ===== VIEW MODE TOGGLE + PORTFOLIO INFO ===== */}
       <div className="flex items-center gap-3">
         <div className={cn(
           'flex rounded-lg p-0.5 border',
@@ -195,7 +184,6 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
           </button>
         </div>
 
-        {/* Search */}
         {viewMode === 'strategy' && (
           <input
             type="text"
@@ -211,7 +199,6 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
           />
         )}
 
-        {/* Portfolio capital (portfolio mode) */}
         {viewMode === 'portfolio' && portfolio.size > 0 && (
           <div className="flex items-center gap-2">
             <span className={cn('text-xs', textMuted)}>Capital:</span>
@@ -232,7 +219,6 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
           </div>
         )}
 
-        {/* Selected stock badge */}
         {selectedTicker && viewMode === 'strategy' && (
           <div className="ml-auto flex items-center gap-2">
             <span className={cn('text-xs', textMuted)}>Selected:</span>
@@ -247,10 +233,8 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
         )}
       </div>
 
-      {/* ===== STRATEGY VIEW ===== */}
       {viewMode === 'strategy' && (
         <>
-          {/* Sector tabs — right-edge fade hints at horizontal overflow on mobile */}
           <div
             className="flex gap-1 overflow-x-auto scrollbar-hide pb-0.5"
             style={{
@@ -281,14 +265,12 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
                   <span className={cn('ml-1 font-mono text-[10px]', active ? 'opacity-70' : 'opacity-40')}>
                     {sectorCounts[sector]}
                   </span>
-                  {/* Portfolio dot indicator */}
                   {hasPortfolioStocks && !active && (
                     <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-[#FF9933]" />
                   )}
                 </button>
               );
             })}
-            {/* Commodities pseudo-sector tab */}
             {(() => {
               const active = activeSector === COMMODITIES_TAB;
               return (
@@ -314,7 +296,6 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
             })()}
           </div>
 
-          {/* Stock / Commodity grid card */}
           <div
             className={cn(
               'rounded-xl border overflow-hidden',
@@ -342,7 +323,6 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
             )}
           </div>
 
-          {/* Strategy Builder — always visible */}
           <StrategyBuilder
             stock={selectedInstrument}
             priceData={selectedPriceData}
@@ -350,12 +330,10 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
             onClose={() => { setSelectedTicker(null); setSelectedPriceData(null); }}
           />
 
-          {/* News feed — filtered to selected ticker or general when none */}
           <NewsPanel ticker={selectedTicker} isLight={isLight} />
         </>
       )}
 
-      {/* ===== PORTFOLIO VIEW ===== */}
       {viewMode === 'portfolio' && (
         <PortfolioView
           stocks={portfolioStocks}
@@ -370,7 +348,6 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
         />
       )}
 
-      {/* ===== GOAL WIZARD (modal) ===== */}
       {showWizard && (
         <GoalWizard
           isLight={isLight}
@@ -383,10 +360,6 @@ export function NiftyTab({ isLight }: NiftyTabProps) {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// StockGrid — scrollable grid of compact stock cards, 15 visible
-// ---------------------------------------------------------------------------
 
 function StockGrid({
   stocks,
@@ -442,7 +415,6 @@ function StockGrid({
                       : 'bg-zinc-900/40 border-zinc-800/60 hover:border-zinc-600',
               )}
             >
-              {/* 1Y return — top right */}
               <div
                 className={cn(
                   'absolute top-1.5 right-2 text-[10px] font-mono font-semibold',
@@ -456,7 +428,6 @@ function StockGrid({
                 {px?.yr1_pct == null ? '--' : `${px.yr1_pct >= 0 ? '+' : ''}${(px.yr1_pct * 100).toFixed(0)}%`}
               </div>
 
-              {/* Portfolio star */}
               <button
                 onClick={(e) => onTogglePortfolio(stock.ticker, e)}
                 className={cn(
@@ -470,17 +441,14 @@ function StockGrid({
                 {inPortfolio ? '★' : '☆'}
               </button>
 
-              {/* Ticker */}
               <div className={cn('text-[11px] font-bold font-mono leading-tight', isLight ? 'text-gray-900' : 'text-zinc-100')}>
                 {stock.ticker}
               </div>
 
-              {/* Name */}
               <div className={cn('text-[9px] truncate leading-tight mt-0.5', textMuted)} title={stock.name}>
                 {stock.name}
               </div>
 
-              {/* Compact metrics row */}
               <div className="flex items-center gap-2 mt-1.5">
                 <div>
                   <div className={cn('text-[7px] uppercase tracking-wider', isLight ? 'text-gray-500' : 'text-zinc-400')}>Lot</div>
@@ -506,10 +474,6 @@ function StockGrid({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// PortfolioView — portfolio optimisation UI
-// ---------------------------------------------------------------------------
 
 type AllocMethod = OptiAllocMethod | 'custom';
 
@@ -549,7 +513,6 @@ function PortfolioView({
   const [perStockHistory, setPerStockHistory] = useState<Record<string, { dates: readonly string[]; close: readonly number[] }>>({});
   const textMuted = isLight ? 'text-gray-500' : 'text-zinc-400';
 
-  // Load full price history for portfolio stocks (latest price + full close series)
   useEffect(() => {
     let cancelled = false;
     void Promise.all(
@@ -568,7 +531,6 @@ function PortfolioView({
     return () => { cancelled = true; };
   }, [stocks]);
 
-  // Portfolio optimisation hook
   const { result: optResult, frontier, isLoading: optLoading, error: optError, run: runOptimisation } = usePortfolioOptimisation({
     tickers: stocks.map((s) => s.ticker),
     sectors: stocks.map((s) => s.sector),
@@ -578,18 +540,13 @@ function PortfolioView({
     lotSizes: stocks.map((s) => s.lot_size),
   });
 
-  // Use optimised weights if available, else equal weight
   const weights = optResult ? optResult.weights : stocks.map(() => 1 / stocks.length);
 
-  // All portfolio stocks have full history loaded?
   const allHistoryLoaded = stocks.length > 0 && stocks.every((s) => perStockHistory[s.ticker]);
 
-  // Compute aligned daily returns, portfolio return series, and equity curve.
-  // Alignment rule: intersect trading dates across all stocks (shortest history wins).
   const metricsData = useMemo(() => {
     if (!allHistoryLoaded || stocks.length === 0) return null;
 
-    // Build per-stock date->close maps
     const maps: Map<string, number>[] = stocks.map((s) => {
       const h = perStockHistory[s.ticker];
       const m = new Map<string, number>();
@@ -597,7 +554,6 @@ function PortfolioView({
       return m;
     });
 
-    // Common date intersection — start from the shortest series, filter by presence in all others.
     let shortestIdx = 0;
     let shortestLen = perStockHistory[stocks[0].ticker].dates.length;
     for (let i = 1; i < stocks.length; i++) {
@@ -611,7 +567,6 @@ function PortfolioView({
     }
     if (commonDates.length < 2) return null;
 
-    // Per-stock aligned close series + daily returns (rᵢ = pₜ/pₜ₋₁ − 1)
     const perAssetReturns: number[][] = stocks.map((_s, si) => {
       const m = maps[si];
       const rets: number[] = [];
@@ -624,7 +579,6 @@ function PortfolioView({
       return rets;
     });
 
-    // Portfolio returns: Σᵢ wᵢ rᵢ per day (weights length matches stocks length)
     const n = perAssetReturns[0]?.length ?? 0;
     const portfolioReturns: number[] = new Array(n).fill(0);
     for (let t = 0; t < n; t++) {
@@ -635,7 +589,6 @@ function PortfolioView({
       portfolioReturns[t] = r;
     }
 
-    // Equity curve: 100 × Π(1 + rₚ), aligned to returnDates (one shorter than commonDates).
     const equity: number[] = new Array(n);
     let eq = 100;
     for (let t = 0; t < n; t++) {
@@ -685,7 +638,6 @@ function PortfolioView({
 
   return (
     <div className="space-y-3">
-      {/* Wizard + saved portfolios toolbar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <button
           onClick={onOpenWizard}
@@ -710,7 +662,6 @@ function PortfolioView({
         </div>
       </div>
 
-      {/* Allocation method selector */}
       <div className={cn(
         'rounded-xl border p-3',
         isLight ? 'bg-white border-gray-200' : 'bg-zinc-900/30 border-zinc-800',
@@ -739,7 +690,6 @@ function PortfolioView({
         </div>
       </div>
 
-      {/* Portfolio stocks table */}
       <div className={cn(
         'rounded-xl border overflow-hidden',
         isLight ? 'bg-white border-gray-200' : 'bg-zinc-900/30 border-zinc-800',
@@ -803,7 +753,6 @@ function PortfolioView({
           })}
         </div>
 
-        {/* Summary row */}
         <div className={cn(
           'grid grid-cols-[1fr_0.5fr_0.5fr_0.5fr_0.5fr_0.5fr_0.3fr] gap-2 px-3 py-2 text-xs font-semibold',
           isLight ? 'bg-gray-50 border-t border-gray-200' : 'bg-zinc-900/80 border-t border-zinc-800',
@@ -820,7 +769,6 @@ function PortfolioView({
         </div>
       </div>
 
-      {/* Run Optimisation button */}
       <button
         onClick={runOptimisation}
         disabled={optLoading || stocks.length < 2}
@@ -840,10 +788,8 @@ function PortfolioView({
         <div className="text-xs text-red-400 px-2">{optError}</div>
       )}
 
-      {/* Optimisation results */}
       {optResult && (
         <div className="space-y-3">
-          {/* Portfolio metrics */}
           <div className={cn('rounded-xl border p-4', isLight ? 'bg-white border-gray-200' : 'bg-zinc-900/30 border-zinc-800')}>
             <div className={cn('text-[10px] uppercase tracking-wider font-semibold mb-3', textMuted)}>
               Portfolio Metrics
@@ -856,7 +802,6 @@ function PortfolioView({
             </div>
           </div>
 
-          {/* Risk contribution */}
           <div className={cn('rounded-xl border p-4', isLight ? 'bg-white border-gray-200' : 'bg-zinc-900/30 border-zinc-800')}>
             <div className={cn('text-[10px] uppercase tracking-wider font-semibold mb-3', textMuted)}>
               Risk Contribution
@@ -883,7 +828,6 @@ function PortfolioView({
             </div>
           </div>
 
-          {/* Efficient frontier */}
           {frontier && frontier.length > 0 && (
             <div className={cn('rounded-xl border p-4', isLight ? 'bg-white border-gray-200' : 'bg-zinc-900/30 border-zinc-800')}>
               <div className={cn('text-[10px] uppercase tracking-wider font-semibold mb-3', textMuted)}>
@@ -929,7 +873,6 @@ function PortfolioView({
                       <Cell key={i} fill={i === frontier.length - 1 ? '#22C55E' : '#FF9933'} r={i === frontier.length - 1 ? 6 : 3} />
                     ))}
                   </Scatter>
-                  {/* Current portfolio point */}
                   <Scatter
                     data={[{ volatility: optResult.volatility, return: optResult.expected_return }]}
                     fill="#22C55E"
@@ -944,7 +887,6 @@ function PortfolioView({
         </div>
       )}
 
-      {/* Historical portfolio metrics panel (rolling Sharpe/vol, drawdowns, distribution) */}
       {stocks.length >= 2 && !allHistoryLoaded && (
         <div className={cn('rounded-xl border px-4 py-3 text-xs', isLight ? 'bg-white border-gray-200 text-gray-500' : 'bg-zinc-900/30 border-zinc-800 text-zinc-400')}>
           Loading price history for {stocks.length} stocks…
@@ -970,7 +912,6 @@ function PortfolioView({
         />
       )}
 
-      {/* Placeholder when no results */}
       {!optResult && !optLoading && (
         <div className={cn(
           'rounded-xl border p-6 text-center',
@@ -984,10 +925,6 @@ function PortfolioView({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// MetricBox — compact metric display for portfolio results
-// ---------------------------------------------------------------------------
 
 function MetricBox({ label, value, color, isLight }: { label: string; value: string; color: string; isLight: boolean }) {
   return (

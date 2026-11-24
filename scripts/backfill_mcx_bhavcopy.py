@@ -42,7 +42,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 REGISTRY_PATH = REPO_ROOT / "public" / "india" / "mcx-registry.json"
 OUT_DIR = REPO_ROOT / "public" / "india" / "prices" / "mcx"
 
-# Registry symbol -> mcxpy bhavcopy Symbol column value (stripped).
 MCXPY_SYMBOL_MAP: dict[str, str] = {
     "GOLD": "GOLD",
     "SILVER": "SILVER",
@@ -52,7 +51,6 @@ MCXPY_SYMBOL_MAP: dict[str, str] = {
     "MCXMETLDEX": "MCXMETLDEX",
 }
 
-# Registry symbol -> expected mcxpy Instrument Name (stripped).
 INSTRUMENT_KIND: dict[str, str] = {
     "GOLD": "FUTCOM",
     "SILVER": "FUTCOM",
@@ -133,7 +131,6 @@ def _daterange(start: date, end: date):
     cur = start
     one_day = timedelta(days=1)
     while cur <= end:
-        # Skip Sat (5), Sun (6)
         if cur.weekday() < 5:
             yield cur
         cur += one_day
@@ -142,7 +139,6 @@ def _daterange(start: date, end: date):
 def _extract_front_month(
     df: pd.DataFrame, symbol_mcxpy: str, instrument_kind: str
 ) -> OhlcvRow | None:
-    """Return the OHLCV of the earliest-expiry contract with positive close."""
     df = df.copy()
     df["Symbol"] = df["Symbol"].astype(str).str.strip()
     df["Instrument Name"] = df["Instrument Name"].astype(str).str.strip()
@@ -150,12 +146,10 @@ def _extract_front_month(
     if rows.empty:
         return None
 
-    # Earliest expiry first
     rows = rows.copy()
     rows["Expiry Date"] = pd.to_datetime(rows["Expiry Date"], errors="coerce")
     rows = rows.sort_values("Expiry Date")
 
-    # Prefer row with positive close (traded today), else first row
     traded = rows[rows["Close"].astype(float) > 0]
     pick = traded.iloc[0] if not traded.empty else rows.iloc[0]
 
@@ -212,10 +206,6 @@ def main(argv: list[str] | None = None) -> int:
             LOGGER.error("Unknown registry symbol: %s", s)
             return 1
 
-    # Only seed from existing JSON if explicitly requested. Default is to
-    # start fresh, because the existing files may contain yfinance surrogate
-    # data in USD (COMEX gold GC=F etc), which would create a currency-level
-    # discontinuity when merged with real MCX rupee data.
     accum: dict[str, dict[str, OhlcvRow]] = {s: {} for s in requested}
     if args.seed_existing:
         for s in requested:
@@ -317,7 +307,6 @@ def main(argv: list[str] | None = None) -> int:
                         counter["new"] += 1
                     accum[reg_sym][iso] = row
 
-        # Flush to disk periodically to survive crashes.
         with counter_lock:
             should_flush = counter["total"] % args.save_every == 0
         if should_flush:
@@ -341,7 +330,6 @@ def main(argv: list[str] | None = None) -> int:
 
     flush_to_disk()
 
-    # Summary per symbol
     for reg_sym, by_date in accum.items():
         if by_date:
             dates_sorted = sorted(by_date.keys())

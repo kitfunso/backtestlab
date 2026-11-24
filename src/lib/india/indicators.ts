@@ -1,15 +1,3 @@
-/**
- * India Equities Strategy Tester - Technical Indicators
- *
- * Pure functions operating on number arrays. Each returns number[] (or a named
- * object for multi-output indicators). Leading values that fall within the
- * lookback window are filled with NaN.
- */
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function nanArray(len: number): number[] {
   return new Array<number>(len).fill(NaN);
 }
@@ -44,11 +32,6 @@ function trueRange(
   );
 }
 
-// =========================================================================
-// TREND INDICATORS
-// =========================================================================
-
-/** Simple Moving Average */
 export function sma(close: readonly number[], period: number): number[] {
   const n = close.length;
   const out = nanArray(n);
@@ -63,12 +46,10 @@ export function sma(close: readonly number[], period: number): number[] {
   return out;
 }
 
-/** Exponential Moving Average */
 export function ema(close: readonly number[], period: number): number[] {
   const n = close.length;
   const out = nanArray(n);
   if (n < period) return out;
-  // Seed with SMA
   let s = 0;
   for (let i = 0; i < period; i++) s += close[i];
   out[period - 1] = s / period;
@@ -79,7 +60,6 @@ export function ema(close: readonly number[], period: number): number[] {
   return out;
 }
 
-/** Double Exponential Moving Average */
 export function dema(close: readonly number[], period: number): number[] {
   const e1 = ema(close, period);
   const e2 = ema(e1.map((v) => (isNaN(v) ? 0 : v)), period);
@@ -93,7 +73,6 @@ export function dema(close: readonly number[], period: number): number[] {
   return out;
 }
 
-/** Triple Exponential Moving Average */
 export function tema(close: readonly number[], period: number): number[] {
   const e1 = ema(close, period);
   const e1Clean = e1.map((v) => (isNaN(v) ? 0 : v));
@@ -110,7 +89,6 @@ export function tema(close: readonly number[], period: number): number[] {
   return out;
 }
 
-/** Weighted Moving Average */
 export function wma(close: readonly number[], period: number): number[] {
   const n = close.length;
   const out = nanArray(n);
@@ -126,7 +104,6 @@ export function wma(close: readonly number[], period: number): number[] {
   return out;
 }
 
-/** Hull Moving Average: WMA(2*WMA(n/2) - WMA(n), sqrt(n)) */
 export function hullMA(close: readonly number[], period: number): number[] {
   const halfPeriod = Math.max(Math.floor(period / 2), 1);
   const sqrtPeriod = Math.max(Math.floor(Math.sqrt(period)), 1);
@@ -138,12 +115,10 @@ export function hullMA(close: readonly number[], period: number): number[] {
     diff[i] = isNaN(wmaHalf[i]) || isNaN(wmaFull[i]) ? 0 : 2 * wmaHalf[i] - wmaFull[i];
   }
   const raw = wma(diff, sqrtPeriod);
-  // Set leading NaNs
   const warmup = period + sqrtPeriod - 2;
   return fillNaN(raw, warmup);
 }
 
-/** Volume Weighted Moving Average */
 export function vwma(
   close: readonly number[],
   volume: readonly number[],
@@ -164,7 +139,6 @@ export function vwma(
   return out;
 }
 
-/** Supertrend indicator */
 export function supertrend(
   high: readonly number[],
   low: readonly number[],
@@ -187,19 +161,15 @@ export function supertrend(
     lowerBand[i] = hl2 - multiplier * atrArr[i];
   }
 
-  // Clamp bands (standard supertrend logic)
   for (let i = period; i < n; i++) {
-    // Lower band can only rise (never fall) while price stays above it
     if (close[i - 1] > lowerBand[i - 1]) {
       lowerBand[i] = Math.max(lowerBand[i], lowerBand[i - 1]);
     }
-    // Upper band can only fall (never rise) while price stays below it
     if (close[i - 1] < upperBand[i - 1]) {
       upperBand[i] = Math.min(upperBand[i], upperBand[i - 1]);
     }
   }
 
-  // Compute supertrend
   for (let i = period; i < n; i++) {
     if (i === period) {
       dir[i] = close[i] > upperBand[i] ? 1 : -1;
@@ -218,7 +188,6 @@ export function supertrend(
   return { supertrend: st, direction: dir };
 }
 
-/** Ichimoku Cloud */
 export function ichimoku(
   high: readonly number[],
   low: readonly number[],
@@ -271,7 +240,6 @@ export function ichimoku(
       spanB[displaced] = midpoint(high, low, i, spanBPeriod);
     }
   }
-  // Chikou = close shifted back
   for (let i = 0; i < n - displacement; i++) {
     chikou[i] = close[i + displacement];
   }
@@ -279,7 +247,6 @@ export function ichimoku(
   return { tenkan, kijun, spanA, spanB, chikou };
 }
 
-/** Parabolic SAR */
 export function parabolicSAR(
   high: readonly number[],
   low: readonly number[],
@@ -301,12 +268,10 @@ export function parabolicSAR(
     let currentSar = prevSar + af * (ep - prevSar);
 
     if (isLong) {
-      // SAR must not be above previous two lows
       if (i >= 2) currentSar = Math.min(currentSar, low[i - 1], low[i - 2]);
       else currentSar = Math.min(currentSar, low[i - 1]);
 
       if (low[i] < currentSar) {
-        // Reverse to short
         isLong = false;
         currentSar = ep;
         ep = low[i];
@@ -318,12 +283,10 @@ export function parabolicSAR(
         }
       }
     } else {
-      // SAR must not be below previous two highs
       if (i >= 2) currentSar = Math.max(currentSar, high[i - 1], high[i - 2]);
       else currentSar = Math.max(currentSar, high[i - 1]);
 
       if (high[i] > currentSar) {
-        // Reverse to long
         isLong = true;
         currentSar = ep;
         ep = high[i];
@@ -340,7 +303,6 @@ export function parabolicSAR(
   return sar;
 }
 
-/** Linear Regression (least squares fit value) */
 export function linearRegression(close: readonly number[], period: number): number[] {
   const n = close.length;
   const out = nanArray(n);
@@ -365,7 +327,6 @@ export function linearRegression(close: readonly number[], period: number): numb
   return out;
 }
 
-/** Donchian Channel */
 export function donchianChannel(
   high: readonly number[],
   low: readonly number[],
@@ -390,11 +351,6 @@ export function donchianChannel(
   return { upper, lower, middle };
 }
 
-// =========================================================================
-// MOMENTUM INDICATORS
-// =========================================================================
-
-/** Relative Strength Index */
 export function rsi(close: readonly number[], period: number): number[] {
   const n = close.length;
   const out = nanArray(n);
@@ -422,7 +378,6 @@ export function rsi(close: readonly number[], period: number): number[] {
   return out;
 }
 
-/** Stochastic RSI */
 export function stochRSI(
   close: readonly number[],
   rsiPeriod: number,
@@ -454,7 +409,6 @@ export function stochRSI(
   return { k, d };
 }
 
-/** SMA that skips NaN values (for smoothing sparse series) */
 function smaOnSparse(arr: number[], period: number): number[] {
   const n = arr.length;
   const out = nanArray(n);
@@ -470,7 +424,6 @@ function smaOnSparse(arr: number[], period: number): number[] {
   return out;
 }
 
-/** MACD (Moving Average Convergence Divergence) */
 export function macd(
   close: readonly number[],
   fast: number,
@@ -488,13 +441,11 @@ export function macd(
     }
   }
 
-  // Signal line = EMA of MACD line
   const macdClean = macdLine.map((v) => (isNaN(v) ? 0 : v));
   const signalRaw = ema(macdClean, signalPeriod);
   const signalLine = nanArray(n);
   const histogram = nanArray(n);
 
-  // Find first valid MACD index
   let firstValid = -1;
   for (let i = 0; i < n; i++) {
     if (!isNaN(macdLine[i])) { firstValid = i; break; }
@@ -513,7 +464,6 @@ export function macd(
   return { macd: macdLine, signal: signalLine, histogram };
 }
 
-/** Average Directional Index */
 export function adx(
   high: readonly number[],
   low: readonly number[],
@@ -538,7 +488,6 @@ export function adx(
     minusDM[i] = downMove > upMove && downMove > 0 ? downMove : 0;
   }
 
-  // Smooth with Wilder's method
   let smoothTR = sum(tr, 1, period + 1);
   let smoothPlusDM = sum(plusDM, 1, period + 1);
   let smoothMinusDM = sum(minusDM, 1, period + 1);
@@ -559,7 +508,6 @@ export function adx(
     dx[i] = diSum === 0 ? 0 : (Math.abs(pdi - mdi) / diSum) * 100;
   }
 
-  // ADX = smoothed DX
   let adxSum = 0;
   let adxCount = 0;
   for (let i = period; i < n && adxCount < period; i++) {
@@ -571,7 +519,6 @@ export function adx(
       }
     }
   }
-  // Continue Wilder smoothing
   let started = false;
   for (let i = 0; i < n; i++) {
     if (!isNaN(adxOut[i]) && !started) {
@@ -586,7 +533,6 @@ export function adx(
   return { adx: adxOut, plusDI, minusDI };
 }
 
-/** Commodity Channel Index */
 export function cci(
   high: readonly number[],
   low: readonly number[],
@@ -610,7 +556,6 @@ export function cci(
   return out;
 }
 
-/** Rate of Change */
 export function roc(close: readonly number[], period: number): number[] {
   const n = close.length;
   const out = nanArray(n);
@@ -620,7 +565,6 @@ export function roc(close: readonly number[], period: number): number[] {
   return out;
 }
 
-/** Williams %R */
 export function williamsR(
   high: readonly number[],
   low: readonly number[],
@@ -642,7 +586,6 @@ export function williamsR(
   return out;
 }
 
-/** Momentum (price difference over N periods) */
 export function momentum(close: readonly number[], period: number): number[] {
   const n = close.length;
   const out = nanArray(n);
@@ -652,7 +595,6 @@ export function momentum(close: readonly number[], period: number): number[] {
   return out;
 }
 
-/** True Strength Index */
 export function tsi(
   close: readonly number[],
   longPeriod: number = 25,
@@ -683,7 +625,6 @@ export function tsi(
   return out;
 }
 
-/** Awesome Oscillator */
 export function awesomeOscillator(
   high: readonly number[],
   low: readonly number[],
@@ -706,7 +647,6 @@ export function awesomeOscillator(
   return out;
 }
 
-/** Percentage Price Oscillator */
 export function ppo(
   close: readonly number[],
   fast: number = 12,
@@ -746,7 +686,6 @@ export function ppo(
   return { ppo: ppoLine, signal: signalLine, histogram };
 }
 
-/** Time-series Momentum (rolling return over N periods) */
 export function tsMomentum(close: readonly number[], period: number): number[] {
   const n = close.length;
   const out = nanArray(n);
@@ -756,11 +695,6 @@ export function tsMomentum(close: readonly number[], period: number): number[] {
   return out;
 }
 
-// =========================================================================
-// VOLATILITY INDICATORS
-// =========================================================================
-
-/** Bollinger Bands */
 export function bollingerBands(
   close: readonly number[],
   period: number,
@@ -784,7 +718,6 @@ export function bollingerBands(
   return { upper, middle: mid, lower };
 }
 
-/** Average True Range */
 export function atr(
   high: readonly number[],
   low: readonly number[],
@@ -805,7 +738,6 @@ export function atr(
   return out;
 }
 
-/** Keltner Channel */
 export function keltnerChannel(
   high: readonly number[],
   low: readonly number[],
@@ -829,7 +761,6 @@ export function keltnerChannel(
   return { upper, middle: mid, lower };
 }
 
-/** Historical Volatility (annualized, based on close-to-close log returns) */
 export function historicalVol(close: readonly number[], period: number): number[] {
   const n = close.length;
   const out = nanArray(n);
@@ -848,12 +779,11 @@ export function historicalVol(close: readonly number[], period: number): number[
       variance += diff * diff;
     }
     variance /= period - 1;
-    out[i] = Math.sqrt(variance * 252) * 100; // annualized, as percentage
+    out[i] = Math.sqrt(variance * 252) * 100;
   }
   return out;
 }
 
-/** Bollinger %B */
 export function bollingerPctB(
   close: readonly number[],
   period: number,
@@ -870,7 +800,6 @@ export function bollingerPctB(
   return out;
 }
 
-/** Bollinger Band Width */
 export function bollingerWidth(
   close: readonly number[],
   period: number,
@@ -887,7 +816,6 @@ export function bollingerWidth(
   return out;
 }
 
-/** Standard Deviation */
 export function stdDev(close: readonly number[], period: number): number[] {
   const n = close.length;
   const out = nanArray(n);
@@ -904,7 +832,6 @@ export function stdDev(close: readonly number[], period: number): number[] {
   return out;
 }
 
-/** Chaikin Volatility */
 export function chaikinVol(
   high: readonly number[],
   low: readonly number[],
@@ -925,11 +852,6 @@ export function chaikinVol(
   return out;
 }
 
-// =========================================================================
-// VOLUME INDICATORS
-// =========================================================================
-
-/** On-Balance Volume */
 export function obv(close: readonly number[], volume: readonly number[]): number[] {
   const n = close.length;
   const out: number[] = new Array(n).fill(0);
@@ -942,12 +864,10 @@ export function obv(close: readonly number[], volume: readonly number[]): number
   return out;
 }
 
-/** Volume SMA */
 export function volumeSMA(volume: readonly number[], period: number): number[] {
   return sma(volume, period);
 }
 
-/** Accumulation/Distribution Line */
 export function accumDist(
   high: readonly number[],
   low: readonly number[],
@@ -965,7 +885,6 @@ export function accumDist(
   return out;
 }
 
-/** Chaikin Money Flow */
 export function cmf(
   high: readonly number[],
   low: readonly number[],
@@ -996,7 +915,6 @@ export function cmf(
   return out;
 }
 
-/** Money Flow Index */
 export function mfi(
   high: readonly number[],
   low: readonly number[],
@@ -1021,18 +939,15 @@ export function mfi(
   out[period] = negFlow === 0 ? 100 : 100 - 100 / (1 + posFlow / negFlow);
 
   for (let i = period + 1; i < n; i++) {
-    // Remove oldest bar from window
     const oldIdx = i - period;
     const oldMF = tp[oldIdx] * volume[oldIdx];
     if (oldIdx > 0 && tp[oldIdx] > tp[oldIdx - 1]) posFlow -= oldMF;
     else if (oldIdx > 0 && tp[oldIdx] < tp[oldIdx - 1]) negFlow -= oldMF;
 
-    // Add newest bar
     const newMF = tp[i] * volume[i];
     if (tp[i] > tp[i - 1]) posFlow += newMF;
     else if (tp[i] < tp[i - 1]) negFlow += newMF;
 
-    // Clamp to prevent floating point drift below zero
     posFlow = Math.max(0, posFlow);
     negFlow = Math.max(0, negFlow);
 
@@ -1041,7 +956,6 @@ export function mfi(
   return out;
 }
 
-/** Volume Weighted Average Price (session-based, resets daily) */
 export function vwap(
   high: readonly number[],
   low: readonly number[],
@@ -1061,11 +975,6 @@ export function vwap(
   return out;
 }
 
-// =========================================================================
-// PRICE INDICATORS
-// =========================================================================
-
-/** Pivot Points (Classic) */
 export function pivotPoints(
   high: readonly number[],
   low: readonly number[],
@@ -1080,7 +989,6 @@ export function pivotPoints(
   const s2 = nanArray(n);
   const s3 = nanArray(n);
 
-  // Use previous bar's HLC for pivot calculation
   for (let i = 1; i < n; i++) {
     const p = (high[i - 1] + low[i - 1] + close[i - 1]) / 3;
     pp[i] = p;
@@ -1094,7 +1002,6 @@ export function pivotPoints(
   return { pp, r1, r2, r3, s1, s2, s3 };
 }
 
-/** Price vs. rolling High/Low (normalized 0-100 scale) */
 export function priceVsHighLow(
   high: readonly number[],
   low: readonly number[],
@@ -1116,7 +1023,6 @@ export function priceVsHighLow(
   return out;
 }
 
-/** Z-Score of price relative to rolling mean */
 export function zScore(close: readonly number[], period: number): number[] {
   const n = close.length;
   const out = nanArray(n);
@@ -1134,7 +1040,6 @@ export function zScore(close: readonly number[], period: number): number[] {
   return out;
 }
 
-/** Heikin-Ashi candles */
 export function heikinAshi(
   open: readonly number[],
   high: readonly number[],
@@ -1161,7 +1066,6 @@ export function heikinAshi(
   return { haOpen, haHigh, haLow, haClose };
 }
 
-/** Percentage from rolling high */
 export function pctFromHigh(
   high: readonly number[],
   close: readonly number[],
@@ -1180,7 +1084,6 @@ export function pctFromHigh(
   return out;
 }
 
-/** Support and Resistance (based on pivot-like local extremes) */
 export function supportResistance(
   high: readonly number[],
   low: readonly number[],

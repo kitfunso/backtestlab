@@ -54,7 +54,6 @@ describe('computeLegCost', () => {
       lotSize: 500,
       instrumentClass: 'NSE_FO_STOCK',
     });
-    // Sell incurs STT (0.0125%) which is larger than buy's stamp duty (0.002%)
     expect(sell).toBeGreaterThan(buy);
   });
 
@@ -73,7 +72,6 @@ describe('computeLegCost', () => {
       lotSize: 500,
       instrumentClass: 'NSE_FO_STOCK',
     });
-    // Per-lot cost should be materially higher for large trade
     expect(large / 200).toBeGreaterThan(small / 10);
   });
 
@@ -87,12 +85,11 @@ describe('computeLegCost', () => {
     });
     const indexFees = FEE_SCHEDULES.MCX_INDEX;
     expect(indexFees.stt_or_ctt_sell_pct).toBe(0);
-    // Cost should equal brokerage + exchange + gst + slippage only (no tax)
     expect(sell).toBeGreaterThan(0);
   });
 
   it('round-trip NSE F&O cost is a plausible magnitude for liquid large-cap', () => {
-    const notional = 500 * 1500; // ~7.5L notional
+    const notional = 500 * 1500;
     const buy = computeLegCost({
       side: 'BUY',
       lots: 1,
@@ -108,9 +105,6 @@ describe('computeLegCost', () => {
       instrumentClass: 'NSE_FO_STOCK',
     });
     const roundTripBps = ((buy + sell) / notional) * 10000;
-    // Retail discount-broker F&O round-trip is ~5-10 bps for liquid names
-    // (Zerodha/Groww public calculators show ~6 bps at this notional).
-    // Sanity band: 3-60 bps covers illiquid names too.
     expect(roundTripBps).toBeGreaterThan(3);
     expect(roundTripBps).toBeLessThan(60);
   });
@@ -130,7 +124,7 @@ describe('computeTradeCosts', () => {
     const signals = [1, 1, 1, 1];
     const lots = [5, 5, 5, 5];
     const costs = computeTradeCosts(close, signals, lots, 100, 'NSE_FO_STOCK');
-    expect(costs[0]).toBeGreaterThan(0); // entry
+    expect(costs[0]).toBeGreaterThan(0);
     expect(costs[1]).toBe(0);
     expect(costs[2]).toBe(0);
     expect(costs[3]).toBe(0);
@@ -143,7 +137,6 @@ describe('computeTradeCosts', () => {
     const costs = computeTradeCosts(close, signals, lots, 100, 'NSE_FO_STOCK');
     const entryCost = costs[0];
     const flipCost = costs[1];
-    // Flip day: SELL 5 lots (exit long) + SELL 5 lots (enter short) ≈ 2× a single leg
     expect(flipCost).toBeGreaterThan(entryCost * 1.5);
   });
 
@@ -152,7 +145,7 @@ describe('computeTradeCosts', () => {
     const signals = [1, 1, 1];
     const lots = [5, 10, 10];
     const costs = computeTradeCosts(close, signals, lots, 100, 'NSE_FO_STOCK');
-    expect(costs[1]).toBeGreaterThan(0); // +5 lots BUY
+    expect(costs[1]).toBeGreaterThan(0);
     expect(costs[2]).toBe(0);
   });
 

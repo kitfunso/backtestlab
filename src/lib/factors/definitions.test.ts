@@ -7,11 +7,6 @@ import {
   volatility,
 } from './definitions';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Deterministic Mulberry32 PRNG. */
 function mulberry32(seed: number): () => number {
   let state = seed >>> 0;
   return () => {
@@ -23,29 +18,22 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-/** Box-Muller transform -> standard normal. */
 function randn(rng: () => number): number {
   const u1 = Math.max(rng(), Number.MIN_VALUE);
   const u2 = rng();
   return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
 }
 
-/** Build a close series of length n at constant price p. */
 function constantSeries(n: number, p: number): number[] {
   return new Array(n).fill(p);
 }
 
-/** Build a monotonically compounding close series of length n at daily rate r. */
 function compoundSeries(n: number, start: number, r: number): number[] {
   const out: number[] = new Array(n);
   out[0] = start;
   for (let i = 1; i < n; i++) out[i] = out[i - 1] * (1 + r);
   return out;
 }
-
-// ---------------------------------------------------------------------------
-// momentum12_1
-// ---------------------------------------------------------------------------
 
 describe('momentum12_1', () => {
   it('returns null when fewer than 253 observations', () => {
@@ -66,7 +54,6 @@ describe('momentum12_1', () => {
   });
 
   it('matches the exact (t-21 / t-252) - 1 formula', () => {
-    // Build so that close[n-1-252] = 100 and close[n-1-21] = 150 -> expect 0.5.
     const n = 300;
     const closes = new Array<number>(n).fill(0);
     for (let i = 0; i < n; i++) closes[i] = 100;
@@ -75,10 +62,6 @@ describe('momentum12_1', () => {
     expect(momentum12_1(closes)).toBeCloseTo(0.5, 12);
   });
 });
-
-// ---------------------------------------------------------------------------
-// momentum6_1
-// ---------------------------------------------------------------------------
 
 describe('momentum6_1', () => {
   it('returns null when fewer than 127 observations', () => {
@@ -98,33 +81,24 @@ describe('momentum6_1', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// shortReversal
-// ---------------------------------------------------------------------------
-
 describe('shortReversal', () => {
   it('returns null when fewer than 6 observations', () => {
     expect(shortReversal([100, 100, 100, 100, 100])).toBeNull();
   });
 
   it('returns the negative of the last 5-day return', () => {
-    // [95, ?, ?, ?, ?, 100] -> 5d return = 100/95 - 1; reversal = -(5/95)
     const closes = [95, 96, 97, 98, 99, 100];
     const r = 100 / 95 - 1;
     expect(shortReversal(closes)).toBeCloseTo(-r, 12);
   });
 
   it('scores a recent drop positively (reversal opportunity)', () => {
-    const closes = [100, 100, 100, 100, 100, 95]; // -5% last 5 days
+    const closes = [100, 100, 100, 100, 100, 95];
     const score = shortReversal(closes);
     expect(score).not.toBeNull();
     expect(score as number).toBeGreaterThan(0);
   });
 });
-
-// ---------------------------------------------------------------------------
-// volatility
-// ---------------------------------------------------------------------------
 
 describe('volatility', () => {
   it('returns null when fewer than 253 observations', () => {
@@ -152,10 +126,6 @@ describe('volatility', () => {
     expect(ratio).toBeLessThan(1.15);
   });
 });
-
-// ---------------------------------------------------------------------------
-// downsideBeta
-// ---------------------------------------------------------------------------
 
 describe('downsideBeta', () => {
   it('returns null when series lengths differ', () => {
@@ -200,10 +170,6 @@ describe('downsideBeta', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// dispersion
-// ---------------------------------------------------------------------------
-
 describe('dispersion', () => {
   it('returns null when arrays misalign', () => {
     expect(dispersion([100, 100], [101], [99])).toBeNull();
@@ -221,7 +187,6 @@ describe('dispersion', () => {
     const lows = constantSeries(30, 98);
     const d = dispersion(closes, highs, lows);
     expect(d).not.toBeNull();
-    // (102 - 98) / 100 = 0.04
     expect(d as number).toBeCloseTo(0.04, 12);
   });
 

@@ -1,9 +1,5 @@
 name: MCX daily bhavcopy ingest
 
-# Runs weekdays at 18:00 UTC (23:30 IST) - well after the MCX evening session
-# close at 23:30 IST. This leaves a buffer for MCX to publish the day's
-# bhavcopy. The script is idempotent, so a re-run is a no-op.
-
 on:
   schedule:
     - cron: '0 18 * * 1-5'  # 18:00 UTC, weekdays

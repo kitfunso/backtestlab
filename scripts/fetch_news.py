@@ -63,7 +63,6 @@ REQUEST_HEADERS = {
     ),
 }
 
-# Words stripped from company names before building the tag-match vocabulary.
 NAME_STOPWORDS = frozenset(
     {
         "limited",
@@ -105,7 +104,6 @@ NAME_STOPWORDS = frozenset(
 class Stock:
     ticker: str
     name: str
-    # Compiled regexes (ticker + selected name tokens) used for tagging.
     patterns: list[re.Pattern[str]] = field(default_factory=list)
 
 
@@ -114,7 +112,7 @@ class NewsItem:
     title: str
     url: str
     source: str
-    published: str  # ISO8601
+    published: str
     tickers: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
@@ -151,12 +149,6 @@ def _load_stocks() -> list[Stock]:
 
 
 def _build_match_patterns(ticker: str, name: str) -> list[re.Pattern[str]]:
-    """Build the word-boundary regex set used to tag a news item with this stock.
-
-    We always match on the exact ticker symbol. We also match on meaningful
-    name tokens (length >= 4, not in NAME_STOPWORDS) so a headline about
-    'Reliance Industries' tags RELIANCE even when the ticker is absent.
-    """
     tokens: list[str] = [ticker]
     for raw in re.split(r"[^A-Za-z0-9]+", name):
         cleaned = raw.strip().lower()
@@ -178,7 +170,6 @@ def _build_match_patterns(ticker: str, name: str) -> list[re.Pattern[str]]:
 
 
 def _normalize_published(entry) -> str:
-    """Best-effort conversion of an RSS entry's published date to ISO8601 UTC."""
     struct = getattr(entry, "published_parsed", None) or getattr(
         entry, "updated_parsed", None
     )
@@ -188,7 +179,6 @@ def _normalize_published(entry) -> str:
             return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
         except (TypeError, ValueError):
             pass
-    # Fall back to now — better a stale-looking timestamp than an empty one.
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
@@ -197,7 +187,6 @@ def _clean_title(raw: str) -> str:
 
 
 def _fetch_feed(url: str, source: str) -> list[NewsItem]:
-    """Fetch an RSS feed and return parsed items. Returns [] on network error."""
     try:
         response = requests.get(url, headers=REQUEST_HEADERS, timeout=HTTP_TIMEOUT)
         response.raise_for_status()
@@ -228,17 +217,14 @@ def _fetch_feed(url: str, source: str) -> list[NewsItem]:
 
 
 def _dedupe_and_cap(items: Iterable[NewsItem], cap: int) -> list[NewsItem]:
-    """Dedupe by URL, keep newest-first, cap to N. Stable for same-timestamp items."""
     by_url: dict[str, NewsItem] = {}
     for item in items:
-        # Later occurrences of the same URL overwrite — but they're the same story.
         by_url.setdefault(item.url, item)
     sorted_items = sorted(by_url.values(), key=lambda i: i.published, reverse=True)
     return sorted_items[:cap]
 
 
 def _tag_item(item: NewsItem, stocks: list[Stock], haystack_by_stock: str) -> None:
-    """Attach ticker tags based on title text. (Summary not always present.)"""
     for stock in stocks:
         for pattern in stock.patterns:
             if pattern.search(haystack_by_stock):
@@ -254,14 +240,12 @@ def _tag_items(items: list[NewsItem], stocks: list[Stock]) -> None:
 def _fetch_google_news_per_stock(
     stocks: list[Stock], limit: int
 ) -> list[NewsItem]:
-    """Fan out to Google News RSS, one query per stock, with rate limiting."""
     collected: list[NewsItem] = []
     targets = stocks if limit <= 0 else stocks[:limit]
     for i, stock in enumerate(targets):
         query = quote_plus(stock.ticker)
         url = GOOGLE_NEWS_TEMPLATE.format(query=query)
         items = _fetch_feed(url, "Google News")
-        # Pre-tag: every Google News item for this stock's query is about that stock.
         for item in items:
             item.tickers.append(stock.ticker)
         collected.extend(items)
@@ -281,19 +265,16 @@ def _merge_all(
     mc_items: list[NewsItem],
     google_items: list[NewsItem],
 ) -> list[NewsItem]:
-    """Dedupe within each source, then merge and dedupe across sources by URL."""
     et_capped = _dedupe_and_cap(et_items, MAX_ITEMS_PER_SOURCE)
     mc_capped = _dedupe_and_cap(mc_items, MAX_ITEMS_PER_SOURCE)
     google_capped = _dedupe_and_cap(google_items, MAX_ITEMS_PER_SOURCE)
 
-    # Cross-source merge: same URL may appear twice (rare) — keep first.
     cross: dict[str, NewsItem] = {}
     for item in (*et_capped, *mc_capped, *google_capped):
         existing = cross.get(item.url)
         if existing is None:
             cross[item.url] = item
         else:
-            # Merge tickers if duplicate URL across sources.
             existing.tickers = sorted(set(existing.tickers + item.tickers))
     merged = sorted(cross.values(), key=lambda i: i.published, reverse=True)
     LOGGER.info(

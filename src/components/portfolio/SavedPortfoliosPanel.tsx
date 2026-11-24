@@ -22,7 +22,6 @@ interface SavedPortfoliosPanelProps {
   readonly isLight?: boolean;
 }
 
-/** Human-friendly "updated Xd ago" / "Xh ago" / "just now" label. */
 function updatedAgo(iso: string, now: number = Date.now()): string {
   const t = Date.parse(iso);
   if (Number.isNaN(t)) return '—';
@@ -90,7 +89,6 @@ export function SavedPortfoliosPanel({
     [refresh],
   );
 
-  // Styling tokens mirror PortfolioMetricsPanel so both panels read as a set.
   const cardBg = isLight ? 'bg-white border-gray-200' : 'bg-zinc-900/30 border-zinc-800';
   const rowBg = isLight ? 'hover:bg-gray-50' : 'hover:bg-zinc-800/50';
   const rowBorder = isLight ? 'border-gray-100' : 'border-zinc-800/50';

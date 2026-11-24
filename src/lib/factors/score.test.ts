@@ -13,7 +13,6 @@ describe('presets', () => {
   it('contrarian has net-zero-ish weight (negatives included)', () => {
     const w = getPresetWeights('contrarian');
     const sum = Object.values(w).reduce((a, b) => a + (b ?? 0), 0);
-    // magnitude-weighted — not required to sum to 1 since some weights negate
     expect(Math.abs(sum)).toBeLessThan(1.0);
   });
 
@@ -90,7 +89,7 @@ describe('selectTopN', () => {
     const scores = { A: 1.0, B: 0.9, C: 0.8, D: 0.5, E: 0.2 };
     const sectors = { A: 'it', B: 'it', C: 'it', D: 'bank', E: 'pharma' };
     const picks = selectTopN(scores, sectors, 4, 2);
-    expect(picks).toEqual(['A', 'B', 'D', 'E']); // C skipped (IT cap hit)
+    expect(picks).toEqual(['A', 'B', 'D', 'E']);
   });
 
   it('unsectored tickers are not capped', () => {

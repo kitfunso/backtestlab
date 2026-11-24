@@ -55,7 +55,6 @@ describe('simulateDCA', () => {
   });
 
   it('dip-then-recover — DCA beats lump-sum (classic average-down)', () => {
-    // U-shape: start at 100, drop to 50, recover to 100
     const n = 60;
     const curve = Array.from({ length: n }, (_, i) =>
       i < 30 ? 100 - (50 * i) / 29 : 50 + (50 * (i - 30)) / 29,
@@ -72,7 +71,7 @@ describe('simulateDCA', () => {
     const monthly = simulateDCA(curve, dateRange(n), 10000, 'monthly');
     const wC = weekly.contributions.filter((c) => c > 0).length;
     const mC = monthly.contributions.filter((c) => c > 0).length;
-    expect(wC).toBeGreaterThan(mC * 3); // not exact 5x due to calendar months, but materially more
+    expect(wC).toBeGreaterThan(mC * 3);
   });
 });
 

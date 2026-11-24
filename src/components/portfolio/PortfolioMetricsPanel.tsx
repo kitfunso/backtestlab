@@ -39,7 +39,6 @@ export function PortfolioMetricsPanel({
   assetNames,
   isLight,
 }: PortfolioMetricsPanelProps) {
-  // All math comes from @/lib/portfolio — the component is presentation only.
   const annVol = useMemo(() => annualizedVolatility(portfolioReturns), [portfolioReturns]);
   const sortinoRatio = useMemo(() => sortino(portfolioReturns), [portfolioReturns]);
   const calmarRatio = useMemo(() => calmar(portfolioReturns, portfolioEquityCurve), [portfolioReturns, portfolioEquityCurve]);
@@ -52,7 +51,6 @@ export function PortfolioMetricsPanel({
     try { return diversificationRatio(perAssetReturns, weights); } catch { return 0; }
   }, [perAssetReturns, weights]);
 
-  // Full-sample annualized Sharpe derived from the full-sample annVol.
   const sharpeRatio = useMemo(() => {
     const n = portfolioReturns.length;
     if (n < 2 || annVol === 0) return 0;
@@ -66,7 +64,6 @@ export function PortfolioMetricsPanel({
     [drawdowns],
   );
 
-  // Drop leading nulls so chart starts at the first real rolling point.
   const rollingChartData = useMemo(() => {
     const out: { date: string; sharpe: number | null; vol: number | null }[] = [];
     let started = false;
@@ -103,7 +100,6 @@ export function PortfolioMetricsPanel({
 
   return (
     <div className="space-y-3">
-      {/* Summary strip */}
       <div className={cn('rounded-xl border p-3', cardBg)}>
         <div className={cn('text-[10px] uppercase tracking-wider font-semibold mb-2', textMuted)}>
           Portfolio Metrics (Historical)
@@ -126,7 +122,6 @@ export function PortfolioMetricsPanel({
         </div>
       </div>
 
-      {/* Rolling charts */}
       <div className={cn('rounded-xl border p-4', cardBg)}>
         <div className={cn('text-[10px] uppercase tracking-wider font-semibold mb-2', textMuted)}>
           Rolling 6-Month Sharpe & Volatility
@@ -158,7 +153,6 @@ export function PortfolioMetricsPanel({
         )}
       </div>
 
-      {/* Top-5 drawdowns */}
       <div className={cn('rounded-xl border overflow-hidden', cardBg)}>
         <div className={cn('px-3 py-2 text-[10px] uppercase tracking-wider font-semibold border-b', textMuted, isLight ? 'border-gray-200' : 'border-zinc-800')}>
           Top 5 Drawdowns
@@ -211,7 +205,6 @@ export function PortfolioMetricsPanel({
         )}
       </div>
 
-      {/* Return distribution histogram */}
       <div className={cn('rounded-xl border p-4', cardBg)}>
         <div className={cn('text-[10px] uppercase tracking-wider font-semibold mb-2', textMuted)}>
           Daily Return Distribution
@@ -240,7 +233,6 @@ export function PortfolioMetricsPanel({
         )}
       </div>
 
-      {/* Disclaimer footer */}
       <div className={cn('text-[10px] text-center px-2 pb-1', textMuted)}>
         Educational purposes only — not investment advice. Backtests use historical prices; past performance does not predict future results.
       </div>

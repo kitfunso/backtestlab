@@ -3,10 +3,6 @@ import {
   diversificationRatio,
 } from './diversification';
 
-// ---------------------------------------------------------------------------
-// Deterministic PRNG for building uncorrelated series.
-// ---------------------------------------------------------------------------
-
 function mulberry32(seed: number): () => number {
   let state = seed >>> 0;
   return () => {
@@ -24,21 +20,17 @@ function randn(rng: () => number): number {
   return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
 }
 
-// ---------------------------------------------------------------------------
-// diversificationRatio
-// ---------------------------------------------------------------------------
-
 describe('diversificationRatio', () => {
   it('returns 1 for two perfectly correlated (identical) series', () => {
     const a = [0.01, -0.02, 0.015, 0.005, -0.01, 0.02, 0.0, -0.005];
-    const matrix = [a, a]; // identical → correlation 1
+    const matrix = [a, a];
     const dr = diversificationRatio(matrix, [0.5, 0.5]);
     expect(dr).toBeCloseTo(1, 6);
   });
 
   it('returns ≈ √2 for two uncorrelated equal-weight series', () => {
     const rngA = mulberry32(11);
-    const rngB = mulberry32(9973); // independent seed
+    const rngB = mulberry32(9973);
     const n = 2000;
     const a: number[] = [];
     const b: number[] = [];
@@ -47,7 +39,6 @@ describe('diversificationRatio', () => {
       b.push(randn(rngB));
     }
     const dr = diversificationRatio([a, b], [0.5, 0.5]);
-    // True value is √2 ≈ 1.4142. Finite sample drift → allow 5% tolerance.
     expect(dr).toBeGreaterThan(Math.sqrt(2) * 0.95);
     expect(dr).toBeLessThan(Math.sqrt(2) * 1.05);
   });
@@ -72,10 +63,6 @@ describe('diversificationRatio', () => {
     expect(() => diversificationRatio([a, b], [0.5, 0.5])).toThrow(/row/);
   });
 });
-
-// ---------------------------------------------------------------------------
-// correlationMatrix
-// ---------------------------------------------------------------------------
 
 describe('correlationMatrix', () => {
   it('has 1s on the diagonal for non-constant series', () => {

@@ -1,12 +1,5 @@
-/**
- * Diversification metrics for a portfolio of return streams.
- *
- * Pure functions. No side effects. Client-safe.
- */
-
 const WEIGHT_SUM_TOLERANCE = 1e-6;
 
-/** Sample standard deviation (n-1). Returns 0 for series with < 2 observations. */
 function sampleStd(values: readonly number[]): number {
   const n = values.length;
   if (n < 2) return 0;
@@ -21,7 +14,6 @@ function sampleStd(values: readonly number[]): number {
   return Math.sqrt(ss / (n - 1));
 }
 
-/** Sample covariance between two equal-length series (n-1 divisor). */
 function sampleCovariance(a: readonly number[], b: readonly number[]): number {
   const n = a.length;
   if (n < 2) return 0;
@@ -40,10 +32,6 @@ function sampleCovariance(a: readonly number[], b: readonly number[]): number {
   return cov / (n - 1);
 }
 
-/**
- * Validate that all rows of `returnsMatrix` have the same length, and that
- * `weights.length === returnsMatrix.length`. Also checks weight sum ≈ 1.
- */
 function validateInputs(
   returnsMatrix: readonly (readonly number[])[],
   weights: readonly number[],
@@ -74,13 +62,6 @@ function validateInputs(
   }
 }
 
-/**
- * Correlation matrix for a set of return series.
- *
- * `returnsMatrix[i]` is asset i's return history (all rows must be same length).
- * Returns a K×K matrix where entry [i][j] = corr(series_i, series_j).
- * Diagonal is 1 (or 0 if the series is constant — std = 0).
- */
 export function correlationMatrix(
   returnsMatrix: readonly (readonly number[])[],
 ): number[][] {
@@ -108,21 +89,6 @@ export function correlationMatrix(
   return out;
 }
 
-/**
- * Choueifaty–Coignard diversification ratio:
- *
- *   DR = Σᵢ (wᵢ × σᵢ) / σ_portfolio
- *
- * where `σ_portfolio = sqrt(wᵀ Σ w)` and Σ is the covariance matrix.
- *
- * Properties:
- *   - Perfectly correlated assets → DR = 1
- *   - N uncorrelated equal-weight assets → DR = √N
- *   - Always ≥ 1 for long-only portfolios
- *
- * @throws if returnsMatrix rows differ in length, weights length mismatches,
- *         or weights don't sum to 1 within ε = 1e-6.
- */
 export function diversificationRatio(
   returnsMatrix: readonly (readonly number[])[],
   weights: readonly number[],
@@ -132,25 +98,20 @@ export function diversificationRatio(
   const k = returnsMatrix.length;
   const stds: number[] = returnsMatrix.map((row) => sampleStd(row));
 
-  // Numerator: weighted sum of asset vols.
   let numerator = 0;
   for (let i = 0; i < k; i++) {
     numerator += weights[i] * stds[i];
   }
 
-  // Denominator: portfolio vol = sqrt(w^T Σ w).
   let portfolioVariance = 0;
   for (let i = 0; i < k; i++) {
-    // Diagonal term: wᵢ² σᵢ²
     portfolioVariance += weights[i] * weights[i] * stds[i] * stds[i];
-    // Off-diagonal (i != j): 2 × wᵢwⱼ cov(i,j)
     for (let j = i + 1; j < k; j++) {
       const cov = sampleCovariance(returnsMatrix[i], returnsMatrix[j]);
       portfolioVariance += 2 * weights[i] * weights[j] * cov;
     }
   }
 
-  // Guard against tiny negative values from float drift.
   if (portfolioVariance <= 0) return 0;
 
   const portfolioStd = Math.sqrt(portfolioVariance);

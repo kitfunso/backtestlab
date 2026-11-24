@@ -1,16 +1,4 @@
-/**
- * India Equities - Stock Registry
- *
- * Loads registry.json and provides typed accessors for stocks, sectors, and colors.
- * The JSON uses full GICS names (consumer_discretionary, consumer_staples) while
- * the internal GICSSector type uses short forms (consumer_disc, consumer_staples).
- */
-
 import type { GICSSector, IndiaStock } from './types';
-
-// ---------------------------------------------------------------------------
-// Sector Colors (from design preview)
-// ---------------------------------------------------------------------------
 
 export const SECTOR_COLORS: Record<GICSSector, string> = {
   financials: '#F59E0B',
@@ -45,7 +33,6 @@ export const SECTOR_ORDER: readonly GICSSector[] = [
   'industrials',
 ] as const;
 
-// Tailwind classes for sector chips (dark mode)
 export const SECTOR_CHIP_DARK: Record<GICSSector, { bg: string; border: string; text: string }> = {
   financials: { bg: 'bg-amber-500/15', border: 'border-amber-500/30', text: 'text-amber-400' },
   it: { bg: 'bg-cyan-500/15', border: 'border-cyan-500/30', text: 'text-cyan-400' },
@@ -68,11 +55,6 @@ export const SECTOR_CHIP_LIGHT: Record<GICSSector, { bg: string; border: string;
   industrials: { bg: 'bg-blue-50', border: 'border-blue-400/60', text: 'text-blue-700' },
 };
 
-// ---------------------------------------------------------------------------
-// Registry JSON -> Typed data
-// ---------------------------------------------------------------------------
-
-/** Map registry JSON sector names to internal GICSSector */
 function mapSector(raw: string): GICSSector {
   if (raw === 'consumer_discretionary') return 'consumer_disc';
   return raw as GICSSector;
@@ -112,7 +94,6 @@ function ensureLoaded(registryJson: RawRegistry): void {
   }
 }
 
-/** Initialize registry with imported JSON. Call once at module scope. */
 export function initRegistry(json: RawRegistry): void {
   ensureLoaded(json);
 }

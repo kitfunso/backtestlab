@@ -1,10 +1,3 @@
-/**
- * India Equities Strategy Tester — Block Pipeline Types
- *
- * Visual blocks that connect like legos to build strategies.
- * Blocks are converted to StrategyConfig via blocksToStrategyConfig().
- */
-
 import type { IndicatorType, SignalCondition } from './types';
 
 export type BlockKind = 'indicator' | 'trigger' | 'action';

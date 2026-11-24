@@ -44,10 +44,6 @@ import {
 } from '@/lib/india/block-utils';
 import { ResultsPanel } from './ResultsPanel';
 
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
-
 export interface TradableInstrument {
   readonly ticker: string;
   readonly lot_size: number;
@@ -60,10 +56,6 @@ interface StrategyBuilderProps {
   isLight: boolean;
   onClose: () => void;
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 const CONDITION_LABELS: Record<SignalCondition, string> = {
   crosses_above: 'crosses above',
@@ -109,7 +101,6 @@ function getBlockWarning(
   blocks: readonly PipelineBlock[],
 ): string | null {
   if (block.kind === 'indicator') {
-    // Check if any trigger references this indicator
     const hasRule = blocks.some(
       (b) => b.kind === 'trigger' && ((b as TriggerBlock).sourceBlockId === block.id || (b as TriggerBlock).referenceBlockId === block.id),
     );
@@ -205,10 +196,6 @@ function getBlockTooltip(
   return `Direction: ${a.direction}`;
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 export function StrategyBuilder({
   stock,
   priceData,
@@ -228,7 +215,6 @@ export function StrategyBuilder({
   const [showAddRuleModal, setShowAddRuleModal] = useState(false);
   const [expandedBlockId, setExpandedBlockId] = useState<string | null>(null);
 
-  // Derive config from blocks
   const config: StrategyConfig | null = useMemo(
     () => {
       return blocksToStrategyConfig(blocks, sizing, rebalance, combineLogic);
@@ -243,7 +229,6 @@ export function StrategyBuilder({
     priceData,
   });
 
-  // Preset application
   const applyPreset = useCallback(
     (preset: (typeof PRESETS)[number]) => {
       const newBlocks = presetToBlocks(preset);
@@ -257,7 +242,6 @@ export function StrategyBuilder({
     [],
   );
 
-  // Auto-apply first preset on stock selection
   const prevTickerRef = useRef<string | null>(null);
   useEffect(() => {
     const ticker = stock?.ticker ?? null;
@@ -272,7 +256,6 @@ export function StrategyBuilder({
     prevTickerRef.current = ticker;
   }, [stock?.ticker, blocks.length, applyPreset]);
 
-  // Block mutations
   const addIndicator = useCallback((type: IndicatorType) => {
     const meta = INDICATOR_META[type];
     const params: Record<string, number> = {};
@@ -289,7 +272,6 @@ export function StrategyBuilder({
     (sourceBlockId: string, referenceBlockId?: string) => {
       const triggerId = blockId();
 
-      // Smart default threshold based on indicator type
       const srcBlock = blocks.find((b) => b.id === sourceBlockId) as IndicatorBlock | undefined;
       const srcType = srcBlock?.indicatorType;
       let defaultThreshold = 0;
@@ -336,7 +318,6 @@ export function StrategyBuilder({
           indicatorType: ind.indicatorType,
           params: { ...ind.params },
         };
-        // Insert after the original
         const idx = prev.indexOf(block);
         const copy = [...prev];
         copy.splice(idx + 1, 0, newBlock);
@@ -389,7 +370,6 @@ export function StrategyBuilder({
     [],
   );
 
-  // Drag and drop
   const handleDragEnd = useCallback(
     (result: DropResult) => {
       if (!result.destination) return;
@@ -410,7 +390,6 @@ export function StrategyBuilder({
     [blocks],
   );
 
-  // Theme tokens
   const cardBg = isLight ? 'bg-white' : 'bg-zinc-900/50';
   const cardBorder = isLight ? 'border-gray-200' : 'border-zinc-800';
   const tertBg = isLight ? 'bg-gray-50' : 'bg-zinc-800/50';
@@ -418,13 +397,11 @@ export function StrategyBuilder({
   const textSecondary = isLight ? 'text-gray-500' : 'text-zinc-400';
   const textMuted = isLight ? 'text-gray-400' : 'text-zinc-500';
 
-  // Indicator blocks for combine logic toggle and add-rule modal
   const indicatorBlocks = useMemo(() => blocks.filter((b): b is IndicatorBlock => b.kind === 'indicator'), [blocks]);
   const indicatorCount = indicatorBlocks.length;
 
   return (
     <div className={cn('rounded-xl border', cardBorder, cardBg)}>
-      {/* Top Bar */}
       <div
         className={cn(
           'flex items-center gap-3 px-4 py-3 border-b flex-wrap',
@@ -463,7 +440,6 @@ export function StrategyBuilder({
         </button>
       </div>
 
-      {/* Sizing Config Bar */}
       <div
         className={cn(
           'flex gap-4 items-center px-4 py-2.5 border-b text-xs flex-wrap',
@@ -548,7 +524,6 @@ export function StrategyBuilder({
         </div>
       </div>
 
-      {/* Preset Pills */}
       <div
         className={cn(
           'flex gap-1.5 px-4 py-2.5 border-b flex-wrap',
@@ -583,10 +558,8 @@ export function StrategyBuilder({
         ))}
       </div>
 
-      {/* Block Pipeline — rule groups on one row each, AND/OR separates groups */}
       <div className={cn('px-4 py-2 border-b', cardBorder)}>
         {(() => {
-          // Split blocks into rule groups: each group ends when an action block is followed by an indicator
           const groups: PipelineBlock[][] = [];
           let current: PipelineBlock[] = [];
           for (let i = 0; i < blocks.length; i++) {
@@ -659,7 +632,6 @@ export function StrategyBuilder({
           );
         })()}
 
-        {/* Add buttons */}
         <div className="flex items-center gap-1.5 mt-1.5">
           <button
             onClick={() => setShowAddModal(true)}
@@ -690,7 +662,6 @@ export function StrategyBuilder({
           )}
         </div>
 
-        {/* Modals */}
         {showAddModal && (
           <AddBlockModal
             onSelect={addIndicator}
@@ -708,7 +679,6 @@ export function StrategyBuilder({
         )}
       </div>
 
-      {/* Results — full width */}
       <div className="p-4">
         {!stock && blocks.length > 0 && !result && !isLoading && (
           <div className={cn('flex items-center justify-center py-12 text-sm', textMuted)}>
@@ -747,10 +717,6 @@ export function StrategyBuilder({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
 
 function SizingItem({
   label,
@@ -806,10 +772,6 @@ function Tooltip({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Connector line between blocks
-// ---------------------------------------------------------------------------
-
 function Connector({
   isLight,
   showLogicToggle,
@@ -852,10 +814,6 @@ function Connector({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Block Pill
-// ---------------------------------------------------------------------------
 
 function BlockPill({
   block,
@@ -914,9 +872,7 @@ function BlockPill({
           isExpanded && 'ring-1 ring-[#FF9933]/20',
         )}
       >
-        {/* Collapsed pill row */}
         <div className="flex items-center gap-0 min-h-[30px]">
-          {/* Left color border */}
           {isGradient ? (
             <div
               className="w-1 self-stretch rounded-l-lg flex-shrink-0"
@@ -932,7 +888,6 @@ function BlockPill({
             />
           )}
 
-          {/* Drag handle */}
           <div
             {...(dragHandleProps ?? {})}
             className={cn(
@@ -944,7 +899,6 @@ function BlockPill({
             &#x2261;
           </div>
 
-          {/* Kind badge */}
           <span
             className={cn(
               'text-[9px] font-bold uppercase px-1 py-0.5 rounded mr-1.5 flex-shrink-0',
@@ -958,7 +912,6 @@ function BlockPill({
             {kindBadge}
           </span>
 
-          {/* Label */}
           <button
             onClick={onToggleExpand}
             className={cn(
@@ -969,7 +922,6 @@ function BlockPill({
             {label}
           </button>
 
-          {/* Duplicate + Remove */}
           {onDuplicate && (
             <button
               onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
@@ -987,14 +939,12 @@ function BlockPill({
           </button>
         </div>
 
-        {/* Warning for incomplete blocks */}
         {warning && (
           <div className="px-3 py-1.5 text-[10px] text-[#EF4444] font-medium">
             {warning}
           </div>
         )}
 
-        {/* Expanded inline editor */}
         {isExpanded && (
           <div
             className={cn(
@@ -1030,10 +980,6 @@ function BlockPill({
     </Tooltip>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Inline editors
-// ---------------------------------------------------------------------------
 
 function IndicatorEditor({
   block,
@@ -1190,10 +1136,6 @@ function ActionEditor({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Add Block Modal
-// ---------------------------------------------------------------------------
-
 function AddBlockModal({
   onSelect,
   onClose,
@@ -1207,7 +1149,6 @@ function AddBlockModal({
 
   return (
     <>
-      {/* Backdrop */}
       <div className="fixed inset-0 z-[90] bg-black/20" onClick={onClose} />
       <div
         className={cn(
@@ -1274,10 +1215,6 @@ function AddBlockModal({
     </>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Add Rule Modal — pick source (and optional reference) indicator for a new IF→DO pair
-// ---------------------------------------------------------------------------
 
 function AddRuleModal({
   indicatorBlocks,

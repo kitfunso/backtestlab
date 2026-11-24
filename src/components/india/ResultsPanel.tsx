@@ -19,10 +19,6 @@ import type { BacktestResult } from '@/lib/india/types';
 import { formatINR, formatINRFull, formatPct } from '@/lib/india/format';
 import { downloadCSV } from '@/lib/utils';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 type ResultTab = 'performance' | 'metrics' | 'monthly' | 'trades' | 'distribution';
 
 interface ResultsPanelProps {
@@ -31,10 +27,6 @@ interface ResultsPanelProps {
   error: string | null;
   isLight: boolean;
 }
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
 
 export function ResultsPanel({ result, isLoading, error, isLight }: ResultsPanelProps) {
   const [tab, setTab] = useState<ResultTab>('performance');
@@ -79,7 +71,6 @@ export function ResultsPanel({ result, isLoading, error, isLight }: ResultsPanel
 
   return (
     <div>
-      {/* Tab bar */}
       <div className="flex gap-1 mb-4">
         {TABS.map((t) => (
           <button
@@ -108,10 +99,6 @@ export function ResultsPanel({ result, isLoading, error, isLight }: ResultsPanel
   );
 }
 
-// ---------------------------------------------------------------------------
-// Performance Tab
-// ---------------------------------------------------------------------------
-
 function PerformanceTab({ result, isLight }: { result: BacktestResult; isLight: boolean }) {
   const equityData = useMemo(() => {
     return result.equity_curve.dates.map((date, i) => ({
@@ -127,7 +114,6 @@ function PerformanceTab({ result, isLight }: { result: BacktestResult; isLight: 
 
   return (
     <div className="space-y-4">
-      {/* Equity Curve */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className={cn('text-xs font-semibold font-[DM_Sans]', isLight ? 'text-gray-500' : 'text-zinc-500')}>
@@ -180,7 +166,6 @@ function PerformanceTab({ result, isLight }: { result: BacktestResult; isLight: 
         </ResponsiveContainer>
       </div>
 
-      {/* Drawdown */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className={cn('text-xs font-semibold font-[DM_Sans]', isLight ? 'text-gray-500' : 'text-zinc-500')}>
@@ -233,7 +218,6 @@ function PerformanceTab({ result, isLight }: { result: BacktestResult; isLight: 
         </ResponsiveContainer>
       </div>
 
-      {/* Key metrics inline */}
       <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5 mt-3">
         {[
           { label: 'Sharpe', value: result.metrics.sharpe.toFixed(2), color: '#FF9933' },
@@ -259,10 +243,6 @@ function PerformanceTab({ result, isLight }: { result: BacktestResult; isLight: 
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Metrics Tab
-// ---------------------------------------------------------------------------
 
 function MetricsTab({ result, isLight }: { result: BacktestResult; isLight: boolean }) {
   const m = result.metrics;
@@ -317,10 +297,6 @@ function MetricsTab({ result, isLight }: { result: BacktestResult; isLight: bool
   );
 }
 
-// ---------------------------------------------------------------------------
-// Monthly Tab
-// ---------------------------------------------------------------------------
-
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function MonthlyTab({ result, isLight }: { result: BacktestResult; isLight: boolean }) {
@@ -348,7 +324,6 @@ function MonthlyTab({ result, isLight }: { result: BacktestResult; isLight: bool
     return 'bg-rose-600 text-white';
   }
 
-  // Yearly bar data
   const yearlyData = useMemo(() => {
     return result.yearly.map((y) => ({ year: y.year.toString(), pnl: y.pnl }));
   }, [result.yearly]);
@@ -357,7 +332,6 @@ function MonthlyTab({ result, isLight }: { result: BacktestResult; isLight: bool
 
   return (
     <div className="space-y-6">
-      {/* Heatmap */}
       <div className="overflow-x-auto">
         <table className="w-full text-[10px] font-mono">
           <thead>
@@ -413,7 +387,6 @@ function MonthlyTab({ result, isLight }: { result: BacktestResult; isLight: bool
         </table>
       </div>
 
-      {/* Yearly bar chart */}
       <div>
         <span className={cn('text-xs font-semibold font-[DM_Sans] mb-2 block', isLight ? 'text-gray-500' : 'text-zinc-500')}>
           Annual P&L
@@ -448,10 +421,6 @@ function MonthlyTab({ result, isLight }: { result: BacktestResult; isLight: bool
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Trades Tab
-// ---------------------------------------------------------------------------
 
 function TradesTab({ result, isLight }: { result: BacktestResult; isLight: boolean }) {
   const handleExport = () => {
@@ -569,10 +538,6 @@ function TradesTab({ result, isLight }: { result: BacktestResult; isLight: boole
   );
 }
 
-// ---------------------------------------------------------------------------
-// Distribution Tab
-// ---------------------------------------------------------------------------
-
 function DistributionTab({ result, isLight }: { result: BacktestResult; isLight: boolean }) {
   const histData = useMemo(() => {
     if (result.trades.length === 0) return [];
@@ -614,7 +579,6 @@ function DistributionTab({ result, isLight }: { result: BacktestResult; isLight:
 
   return (
     <div className="space-y-4">
-      {/* Histogram */}
       <div>
         <span className={cn('text-xs font-semibold font-[DM_Sans] mb-2 block', isLight ? 'text-gray-500' : 'text-zinc-500')}>
           Trade P&L Distribution
@@ -649,7 +613,6 @@ function DistributionTab({ result, isLight }: { result: BacktestResult; isLight:
         )}
       </div>
 
-      {/* Win/Loss summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <StatCard label="Wins" value={`${wins.length}`} color="text-[#22C55E]" isLight={isLight} />
         <StatCard label="Losses" value={`${losses.length}`} color="text-[#EF4444]" isLight={isLight} />

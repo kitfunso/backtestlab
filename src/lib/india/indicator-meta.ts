@@ -1,10 +1,3 @@
-/**
- * India Equities — Indicator Metadata
- *
- * Labels, descriptions, categories, and parameter specs for all indicators.
- * Shared between the strategy builder UI and the block pipeline.
- */
-
 import type { IndicatorType } from './types';
 
 export interface IndicatorMeta {
@@ -76,7 +69,6 @@ export const TREND_TYPES: readonly IndicatorType[] = [
   'sma', 'ema', 'dema', 'tema', 'wma', 'hull_ma', 'vwma', 'linear_regression', 'parabolic_sar',
 ];
 
-/** Format indicator label with key params, e.g. "SMA(50)" or "MACD(12,26,9)" */
 export function formatBlockLabel(type: IndicatorType, params: Record<string, number>): string {
   const meta = INDICATOR_META[type];
   if (!meta || meta.params.length === 0) return meta?.label ?? type;

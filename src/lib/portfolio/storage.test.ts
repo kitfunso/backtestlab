@@ -17,7 +17,6 @@ function baseSpec(overrides: Partial<SavePortfolioInput> = {}): SavePortfolioInp
   };
 }
 
-/** Advance Date.now so consecutive saves produce monotonic `updatedAt` values. */
 function nowSeq(): () => number {
   let t = Date.UTC(2026, 0, 1, 0, 0, 0);
   return () => {
@@ -31,10 +30,6 @@ describe('portfolio storage', () => {
     localStorage.clear();
     jest.restoreAllMocks();
   });
-
-  // ---------------------------------------------------------------------------
-  // Round-trip
-  // ---------------------------------------------------------------------------
 
   it('round-trips save → list → load', () => {
     const saved = savePortfolio('Tech heavy', baseSpec());
@@ -60,14 +55,9 @@ describe('portfolio storage', () => {
     expect(loadPortfolio('B')).toBeNull();
   });
 
-  // ---------------------------------------------------------------------------
-  // Update by name
-  // ---------------------------------------------------------------------------
-
   it('update by name preserves createdAt and bumps updatedAt', () => {
     const tick = nowSeq();
     const spy = jest.spyOn(Date, 'now').mockImplementation(tick);
-    // Fix ISO generation by monkey-patching constructor: jsdom Date uses Date.now() for `new Date()` with no args.
     const OriginalDate = Date;
     const DateMock = function (this: Date, ...args: unknown[]): Date {
       if (args.length === 0) return new OriginalDate(OriginalDate.now());
@@ -94,14 +84,7 @@ describe('portfolio storage', () => {
     }
   });
 
-  // ---------------------------------------------------------------------------
-  // Listing order
-  // ---------------------------------------------------------------------------
-
   it('lists portfolios sorted by updatedAt desc', () => {
-    // Use explicit timestamps by crafting records through save + manual nudge.
-    // Saves share wall-clock time within a test; simulate ordering by persisting
-    // hand-built records with staggered `updatedAt`.
     const rec = (name: string, updatedAt: string) => ({
       name,
       tickers: ['X'],
@@ -123,12 +106,7 @@ describe('portfolio storage', () => {
     expect(summaries.map((s) => s.name)).toEqual(['newest', 'middle', 'oldest']);
   });
 
-  // ---------------------------------------------------------------------------
-  // Eviction
-  // ---------------------------------------------------------------------------
-
   it('evicts the oldest portfolio when the 21st is saved', () => {
-    // Seed 20 records with strictly increasing updatedAt so ordering is deterministic.
     const seed = Array.from({ length: 20 }, (_, i) => ({
       name: `P${i}`,
       tickers: ['X'],
@@ -140,7 +118,6 @@ describe('portfolio storage', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
     expect(listPortfolios()).toHaveLength(20);
 
-    // 21st save — now() yields a fresh ISO > all seeded entries, so P0 is oldest.
     savePortfolio('P20', baseSpec());
 
     const summaries = listPortfolios();
@@ -168,10 +145,6 @@ describe('portfolio storage', () => {
     expect(summaries.map((s) => s.name).sort()).toEqual(seed.map((s) => s.name).sort());
   });
 
-  // ---------------------------------------------------------------------------
-  // Delete
-  // ---------------------------------------------------------------------------
-
   it('delete removes only the named record', () => {
     savePortfolio('A', baseSpec());
     savePortfolio('B', baseSpec());
@@ -190,10 +163,6 @@ describe('portfolio storage', () => {
     expect(() => deletePortfolio('DoesNotExist')).not.toThrow();
     expect(listPortfolios()).toHaveLength(1);
   });
-
-  // ---------------------------------------------------------------------------
-  // Malformed storage recovery
-  // ---------------------------------------------------------------------------
 
   it('returns empty list when storage contains malformed JSON', () => {
     localStorage.setItem(STORAGE_KEY, '{not json');
@@ -217,7 +186,7 @@ describe('portfolio storage', () => {
     };
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify([good, { name: 'Bad' /* missing other fields */ }, 42, null]),
+      JSON.stringify([good, { name: 'Bad'}, 42, null]),
     );
 
     const summaries = listPortfolios();
@@ -232,10 +201,6 @@ describe('portfolio storage', () => {
     expect(raw).not.toBe('garbage');
     expect(listPortfolios().map((s) => s.name)).toEqual(['Fresh']);
   });
-
-  // ---------------------------------------------------------------------------
-  // Immutability of returned values
-  // ---------------------------------------------------------------------------
 
   it('loadPortfolio returns a defensive copy — mutation does not affect storage', () => {
     savePortfolio('A', baseSpec());

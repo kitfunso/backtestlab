@@ -99,7 +99,6 @@ def _fetch_yfinance(ticker: str, period: str) -> Optional[pd.DataFrame]:
         LOGGER.warning("yfinance returned empty frame for %s", ticker)
         return None
     if isinstance(df.columns, pd.MultiIndex):
-        # yfinance returns a single-ticker multiindex with ticker at level 1
         df.columns = df.columns.get_level_values(0)
     return df
 

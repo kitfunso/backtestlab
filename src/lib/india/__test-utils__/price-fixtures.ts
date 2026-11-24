@@ -28,8 +28,6 @@ export function trendingPrices(
   return { ticker: 'TEST', dates, open, high, low, close, volume };
 }
 
-// Two-regime series: flat warmup, then trend. Ensures fast-vs-slow MA crosses
-// fire AFTER indicator warmup rather than being missed during the NaN window.
 export function regimeShiftPrices(
   startPrice: number,
   warmupDays: number,

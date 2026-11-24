@@ -1,17 +1,6 @@
 name: News RSS aggregator
 
-# Two schedules to respect GitHub Actions free-tier minute budget:
-#   * every 10 minutes during IST market hours (09:15–16:00 IST ≈
-#     03:45–10:30 UTC) Mon–Fri — the window when traders actually care
-#     about fresh headlines.
-#   * hourly the rest of the time so the panel stays warm overnight
-#     without burning minutes.
-
 on:
-  # Schedules paused 2026-05-02 by user request. Re-enable by uncommenting.
-  # schedule:
-  #   - cron: '*/10 3-10 * * 1-5'   # 10-min during IST market hours
-  #   - cron: '0 * * * *'            # hourly off-hours fallback
   workflow_dispatch:
 
 permissions:

@@ -1,31 +1,3 @@
-"""Build a lightweight prices summary for the universe picker UI.
-
-Reads every OHLCV JSON under ``public/india/prices/*.json`` (NSE) and
-``public/india/prices/mcx/*.json`` (MCX) and emits a single
-``public/india/prices-summary.json`` with the latest close + 1-year
-return per ticker.
-
-The card grids (StockGrid, CommodityGrid) show these values so users see
-a live price alongside the ticker without fetching the full per-ticker
-OHLCV series just to render a number.
-
-Schema
-------
-    {
-      "generated_at": "2026-04-20",
-      "stocks": {
-        "RELIANCE": {"close": 2851.4, "yr1_pct": 0.142, "date": "2026-04-17"},
-        ...
-      },
-      "mcx": {
-        "GOLD": {"close": 154609.0, "yr1_pct": 0.085, "date": "2026-04-17"},
-        ...
-      }
-    }
-
-Stdlib only.
-"""
-
 from __future__ import annotations
 
 import json
@@ -55,7 +27,6 @@ def _summarize_series(path: Path) -> dict | None:
     if not closes or not dates or len(closes) != len(dates):
         return None
 
-    # Walk from the tail to find the last positive close.
     last_close = None
     last_date = None
     for i in range(len(closes) - 1, -1, -1):
@@ -72,7 +43,6 @@ def _summarize_series(path: Path) -> dict | None:
     if last_close is None:
         return None
 
-    # 1-year return: close at t - 252 vs today. Use nearest non-null.
     yr1_pct = None
     target_idx = len(closes) - 1 - DAYS_YEAR
     if target_idx >= 0:

@@ -1,12 +1,3 @@
-/**
- * Dollar-cost averaging vs lump-sum simulators for a single equity curve.
- *
- * Both simulators treat the equity curve as a price proxy. Returns per-period
- * portfolio value series aligned 1:1 with the input curve so they can be charted
- * directly. No dividends, no transaction costs at this layer — TC is already
- * baked into the underlying curve.
- */
-
 export type DCAFrequency = 'weekly' | 'monthly';
 
 export interface LumpSumResult {
@@ -31,9 +22,6 @@ function requireAligned(equityCurve: readonly number[], dates: readonly string[]
   }
 }
 
-/**
- * Lump-sum: buy `capital / price[0]` shares on day 0, ride the curve.
- */
 export function simulateLumpSum(
   equityCurve: readonly number[],
   dates: readonly string[],
@@ -53,11 +41,9 @@ function contributionIndices(
 ): number[] {
   const idxs: number[] = [0];
   if (frequency === 'weekly') {
-    // every 5 trading days (approx weekly)
     for (let i = 5; i < dates.length; i += 5) idxs.push(i);
     return idxs;
   }
-  // monthly: first trading day of each new month
   let lastMonth = dates[0].slice(0, 7);
   for (let i = 1; i < dates.length; i++) {
     const m = dates[i].slice(0, 7);
@@ -69,11 +55,6 @@ function contributionIndices(
   return idxs;
 }
 
-/**
- * DCA: split `capital` evenly across contribution dates (weekly or monthly),
- * buying at the equity curve price on each contribution date. Between
- * contributions, the running share count stays flat.
- */
 export function simulateDCA(
   equityCurve: readonly number[],
   dates: readonly string[],
@@ -111,10 +92,6 @@ export function simulateDCA(
   return { values, shares, contributions, totalInvested: perContribution * idxs.length };
 }
 
-/**
- * Annualize a total return over the observed trading-day span.
- * Returns NaN if span is zero.
- */
 export function annualizedReturn(
   terminalValue: number,
   totalInvested: number,

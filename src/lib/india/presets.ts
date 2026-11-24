@@ -1,10 +1,3 @@
-/**
- * India Equities Strategy Tester - Preset Strategies
- *
- * Seven complete strategy configurations ready to run.
- * Each uses a single rule where possible for clarity.
- */
-
 import type { PresetStrategy } from './types';
 
 const DEFAULT_SIZING = {
@@ -14,7 +7,6 @@ const DEFAULT_SIZING = {
 } as const;
 
 export const PRESETS: readonly PresetStrategy[] = [
-  // 1. Golden Cross: Long when SMA(50) > SMA(200), Short when below
   {
     id: 'golden_cross',
     name: 'Golden Cross (SMA 50/200)',
@@ -37,7 +29,6 @@ export const PRESETS: readonly PresetStrategy[] = [
     },
   },
 
-  // 2. RSI Mean Reversion: Long when RSI crosses above 30, Short when crosses below 70
   {
     id: 'rsi_mean_reversion',
     name: 'RSI Mean Reversion (14, 30/70)',
@@ -65,7 +56,6 @@ export const PRESETS: readonly PresetStrategy[] = [
     },
   },
 
-  // 3. Bollinger Bounce: Long when %B crosses above 0, Short when crosses below 1
   {
     id: 'bollinger_bounce',
     name: 'Bollinger Bounce (20, 2\u03C3)',
@@ -93,7 +83,6 @@ export const PRESETS: readonly PresetStrategy[] = [
     },
   },
 
-  // 4. MACD Crossover: Long when MACD > 0, Short when below
   {
     id: 'macd_crossover',
     name: 'MACD Crossover (12/26/9)',
@@ -115,7 +104,6 @@ export const PRESETS: readonly PresetStrategy[] = [
     },
   },
 
-  // 5. Supertrend: direction output is +1/-1 directly
   {
     id: 'supertrend',
     name: 'Supertrend (10, 3)',
@@ -137,7 +125,6 @@ export const PRESETS: readonly PresetStrategy[] = [
     },
   },
 
-  // 6. Triple MA: Long when EMA(9) > EMA(21) AND EMA(21) > EMA(55)
   {
     id: 'triple_ma',
     name: 'Triple MA (EMA 9/21/55)',
@@ -167,7 +154,6 @@ export const PRESETS: readonly PresetStrategy[] = [
     },
   },
 
-  // 7. Momentum: Long when 6-month return > 0, Short when < 0
   {
     id: 'momentum_6m',
     name: 'Momentum (6-Month Lookback)',

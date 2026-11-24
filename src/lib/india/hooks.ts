@@ -1,10 +1,3 @@
-/**
- * India Equities - React Hooks
- *
- * useBacktest: manages backtest computation with debounced config updates.
- * For now calls the engine directly; worker integration comes later.
- */
-
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -25,10 +18,6 @@ interface UseBacktestReturn {
   error: string | null;
 }
 
-/**
- * Runs the backtest engine with 300ms debounce on config changes.
- * Returns { result, isLoading, error }.
- */
 export function useBacktest({
   ticker,
   lotSize,
@@ -47,9 +36,8 @@ export function useBacktest({
       setIsLoading(true);
       setError(null);
 
-      // Use setTimeout to avoid blocking the main thread for large computations
       setTimeout(() => {
-        if (abortRef.current !== id) return; // stale
+        if (abortRef.current !== id) return;
         try {
           const res = runBacktest(prices, cfg, lot, detectInstrumentClass(tkr));
           if (abortRef.current === id) {
@@ -75,7 +63,6 @@ export function useBacktest({
       return;
     }
 
-    // Debounce: 300ms
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       runEngine(priceData, config, lotSize, ticker);
