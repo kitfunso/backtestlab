@@ -60,14 +60,14 @@ describe('computeLegCost', () => {
   it('scales slippage with size beyond threshold', () => {
     const small = computeLegCost({
       side: 'BUY',
-      lots: 10, // ≤ 50 threshold
+      lots: 10,
       pricePerUnit: 1000,
       lotSize: 500,
       instrumentClass: 'NSE_FO_STOCK',
     });
     const large = computeLegCost({
       side: 'BUY',
-      lots: 200, // well above 2x threshold
+      lots: 200,
       pricePerUnit: 1000,
       lotSize: 500,
       instrumentClass: 'NSE_FO_STOCK',

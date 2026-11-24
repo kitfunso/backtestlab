@@ -385,7 +385,6 @@ export function StrategyBuilder({
         setBlocks(reordered);
         setActivePreset(null);
       }
-      // Invalid drop: silently reject, blocks stay in original order
     },
     [blocks],
   );

@@ -1,9 +1,9 @@
 import type { PresetStrategy } from './types';
 
 const DEFAULT_SIZING = {
-  risk_budget: 500_000,   // 5 lakh INR
-  vol_window: 20,         // 20-day rolling vol
-  z_multiplier: 1.65,     // ~95% confidence
+  risk_budget: 500_000,
+  vol_window: 20,
+  z_multiplier: 1.65,
 } as const;
 
 export const PRESETS: readonly PresetStrategy[] = [
@@ -20,7 +20,7 @@ export const PRESETS: readonly PresetStrategy[] = [
           indicator_index: 0,
           condition: 'is_above',
           reference_indicator: 1,
-          direction: 'both',  // above = long, below = short
+          direction: 'both',
         },
       ],
       combine_logic: 'or',
@@ -148,7 +148,7 @@ export const PRESETS: readonly PresetStrategy[] = [
           direction: 'both',
         },
       ],
-      combine_logic: 'and',  // both must agree for trend confirmation
+      combine_logic: 'and',
       sizing: DEFAULT_SIZING,
       rebalance: 'weekly',
     },

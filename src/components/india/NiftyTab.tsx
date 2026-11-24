@@ -484,7 +484,6 @@ const ALLOC_METHODS: { id: AllocMethod; label: string; desc: string }[] = [
   { id: 'min_variance', label: 'Min Variance', desc: 'Minimise portfolio risk' },
   { id: 'max_sharpe', label: 'Max Sharpe', desc: 'Maximise risk-adjusted return' },
   { id: 'max_diversification', label: 'Max Diversification', desc: 'Maximise diversification ratio' },
-  // Custom weights deferred to future version
 ];
 
 function PortfolioView({
@@ -525,7 +524,7 @@ function PortfolioView({
             ...prev,
             [stock.ticker]: { dates: data.dates, close: data.close },
           }));
-        } catch { /* skip */ }
+        } catch {}
       }),
     );
     return () => { cancelled = true; };

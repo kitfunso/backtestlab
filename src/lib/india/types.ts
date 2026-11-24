@@ -39,7 +39,6 @@ export type IndicatorType =
   | 'parabolic_sar'
   | 'linear_regression'
   | 'donchian'
-  // Momentum
   | 'rsi'
   | 'stoch_rsi'
   | 'macd'
@@ -52,7 +51,6 @@ export type IndicatorType =
   | 'awesome_osc'
   | 'ppo'
   | 'ts_momentum'
-  // Volatility
   | 'bollinger'
   | 'atr'
   | 'keltner'
@@ -61,21 +59,18 @@ export type IndicatorType =
   | 'bb_width'
   | 'std_dev'
   | 'chaikin_vol'
-  // Volume
   | 'obv'
   | 'vol_sma'
   | 'accum_dist'
   | 'cmf'
   | 'mfi'
   | 'vwap'
-  // Price
   | 'pivot_points'
   | 'price_vs_high_low'
   | 'z_score'
   | 'heikin_ashi'
   | 'pct_from_high'
   | 'support_resistance'
-  // Pseudo
   | 'close_price';
 
 export interface IndicatorConfig {

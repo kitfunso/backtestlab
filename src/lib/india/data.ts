@@ -28,7 +28,6 @@ export function preloadPriceData(tickers: readonly string[]): void {
   for (const t of tickers) {
     if (!priceCache.has(t)) {
       fetchPriceData(t).catch(() => {
-        // Silently ignore preload failures
       });
     }
   }

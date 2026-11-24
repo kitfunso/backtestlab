@@ -15,22 +15,22 @@ export interface FeeSchedule {
 export const FEE_SCHEDULES: Record<InstrumentClass, FeeSchedule> = {
   NSE_FO_STOCK: {
     brokerage_per_order_inr: 20,
-    exchange_turnover_pct: 0.0000183, // NSE F&O 0.00173% + SEBI 0.0001%
-    stt_or_ctt_sell_pct: 0.000125, // 0.0125% on sell notional for futures
-    stamp_duty_buy_pct: 0.00002, // 0.002% on buy
+    exchange_turnover_pct: 0.0000183,
+    stt_or_ctt_sell_pct: 0.000125,
+    stamp_duty_buy_pct: 0.00002,
     gst_pct: 0.18,
   },
   MCX_SINGLE: {
     brokerage_per_order_inr: 20,
-    exchange_turnover_pct: 0.000026, // 0.0026% MCX + SEBI
-    stt_or_ctt_sell_pct: 0.0001, // 0.01% CTT on non-ag commodities sell
-    stamp_duty_buy_pct: 0.00002, // 0.002% on buy
+    exchange_turnover_pct: 0.000026,
+    stt_or_ctt_sell_pct: 0.0001,
+    stamp_duty_buy_pct: 0.00002,
     gst_pct: 0.18,
   },
   MCX_INDEX: {
     brokerage_per_order_inr: 20,
     exchange_turnover_pct: 0.000026,
-    stt_or_ctt_sell_pct: 0, // index derivatives currently exempt from CTT
+    stt_or_ctt_sell_pct: 0,
     stamp_duty_buy_pct: 0.00002,
     gst_pct: 0.18,
   },
