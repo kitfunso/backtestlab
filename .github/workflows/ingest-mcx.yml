@@ -2,7 +2,7 @@ name: MCX daily bhavcopy ingest
 
 on:
   schedule:
-    - cron: '0 18 * * 1-5'  # 18:00 UTC, weekdays
+    - cron: '0 18 * * 1-5'
   workflow_dispatch:
 
 permissions:

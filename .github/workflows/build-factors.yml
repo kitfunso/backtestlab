@@ -2,7 +2,7 @@ name: Weekly factor score build
 
 on:
   schedule:
-    - cron: '0 4 * * 6'  # 04:00 UTC, Saturday
+    - cron: '0 4 * * 6'
   workflow_dispatch:
 
 permissions:
